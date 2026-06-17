@@ -36,6 +36,21 @@ Route::get('/register', function () {
 
 Route::post('/register', [AuthController::class, 'register']);
 
+// Google OAuth Routes
+Route::get('/auth/google', [AuthController::class, 'redirectToGoogle'])->name('auth.google');
+Route::get('/auth/google/callback', [AuthController::class, 'handleGoogleCallback']);
+
+// Custom Email Verification Routes
+Route::get('/email/verify/{id}/{hash}', [AuthController::class, 'verifyEmail'])->name('verification.verify');
+Route::post('/email/resend', [AuthController::class, 'resendVerification'])->name('verification.resend');
+Route::get('/email/check-verification', [AuthController::class, 'checkVerification'])->name('verification.check');
+
+// Password Reset Routes
+Route::get('/forgot-password', [\App\Http\Controllers\Auth\PasswordResetController::class, 'request'])->middleware('guest')->name('password.request');
+Route::post('/forgot-password', [\App\Http\Controllers\Auth\PasswordResetController::class, 'email'])->middleware('guest')->name('password.email');
+Route::get('/reset-password/{token}', [\App\Http\Controllers\Auth\PasswordResetController::class, 'reset'])->middleware('guest')->name('password.reset');
+Route::post('/reset-password', [\App\Http\Controllers\Auth\PasswordResetController::class, 'update'])->middleware('guest')->name('password.update');
+
 // Superadmin Dashboard Route
 Route::get('/superadmin/dashboard', [SuperadminDashboardController::class, 'index'])->name('superadmin.dashboard')->middleware('auth');
 Route::get('/api/superadmin/stats', [SuperadminDashboardController::class, 'apiStats'])->name('api.superadmin.stats')->middleware('auth');
@@ -56,6 +71,7 @@ Route::get('/superadmin/pengguna/dokter/{id}', [\App\Http\Controllers\Superadmin
 Route::get('/superadmin/pengguna/dokter/{id}/edit', [\App\Http\Controllers\Superadmin\AkunDokterController::class, 'edit'])->name('superadmin.dokter.edit')->middleware('auth');
 Route::put('/superadmin/pengguna/dokter/{id}', [\App\Http\Controllers\Superadmin\AkunDokterController::class, 'update'])->name('superadmin.dokter.update')->middleware('auth');
 Route::delete('/superadmin/pengguna/dokter/{id}', [\App\Http\Controllers\Superadmin\AkunDokterController::class, 'destroy'])->name('superadmin.dokter.destroy')->middleware('auth');
+Route::patch('/superadmin/pengguna/dokter/{id}/toggle-status', [\App\Http\Controllers\Superadmin\AkunDokterController::class, 'toggleStatus'])->name('superadmin.dokter.toggle-status')->middleware('auth');
 
 use App\Http\Controllers\Superadmin\AdminCabangController;
 use App\Http\Controllers\Superadmin\AdminPasienController;
@@ -71,10 +87,12 @@ Route::get('/superadmin/pengguna/admin/{id}', [AdminCabangController::class, 'sh
 Route::get('/superadmin/pengguna/admin/{id}/edit', [AdminCabangController::class, 'edit'])->name('superadmin.admin.edit')->middleware('auth');
 Route::put('/superadmin/pengguna/admin/{id}', [AdminCabangController::class, 'update'])->name('superadmin.admin.update')->middleware('auth');
 Route::delete('/superadmin/pengguna/admin/{id}', [AdminCabangController::class, 'destroy'])->name('superadmin.admin.destroy')->middleware('auth');
+Route::patch('/superadmin/pengguna/admin/{id}/toggle-status', [AdminCabangController::class, 'toggleStatus'])->name('superadmin.admin.toggle-status')->middleware('auth');
 
 Route::get('/superadmin/pengguna/pasien', [AdminPasienController::class, 'index'])->name('superadmin.pasien.index')->middleware('auth');
 Route::get('/superadmin/pengguna/pasien/{id}', [AdminPasienController::class, 'show'])->name('superadmin.pasien.show')->middleware('auth');
 Route::delete('/superadmin/pengguna/pasien/{id}', [AdminPasienController::class, 'destroy'])->name('superadmin.pasien.destroy')->middleware('auth');
+Route::patch('/superadmin/pengguna/pasien/{id}/toggle-status', [AdminPasienController::class, 'toggleStatus'])->name('superadmin.pasien.toggle-status')->middleware('auth');
 
 // Superadmin Akun Apoteker & Kasir
 use App\Http\Controllers\Superadmin\AkunApotekerController;
@@ -86,6 +104,7 @@ Route::post('/superadmin/pengguna/apoteker', [AkunApotekerController::class, 'st
 Route::get('/superadmin/pengguna/apoteker/{id}/edit', [AkunApotekerController::class, 'edit'])->name('superadmin.apoteker.edit')->middleware('auth');
 Route::put('/superadmin/pengguna/apoteker/{id}', [AkunApotekerController::class, 'update'])->name('superadmin.apoteker.update')->middleware('auth');
 Route::delete('/superadmin/pengguna/apoteker/{id}', [AkunApotekerController::class, 'destroy'])->name('superadmin.apoteker.destroy')->middleware('auth');
+Route::patch('/superadmin/pengguna/apoteker/{id}/toggle-status', [AkunApotekerController::class, 'toggleStatus'])->name('superadmin.apoteker.toggle-status')->middleware('auth');
 
 Route::get('/superadmin/pengguna/kasir', [AkunKasirController::class, 'index'])->name('superadmin.kasir.index')->middleware('auth');
 Route::get('/superadmin/pengguna/kasir/create', [AkunKasirController::class, 'create'])->name('superadmin.kasir.create')->middleware('auth');
@@ -93,11 +112,13 @@ Route::post('/superadmin/pengguna/kasir', [AkunKasirController::class, 'store'])
 Route::get('/superadmin/pengguna/kasir/{id}/edit', [AkunKasirController::class, 'edit'])->name('superadmin.kasir.edit')->middleware('auth');
 Route::put('/superadmin/pengguna/kasir/{id}', [AkunKasirController::class, 'update'])->name('superadmin.kasir.update')->middleware('auth');
 Route::delete('/superadmin/pengguna/kasir/{id}', [AkunKasirController::class, 'destroy'])->name('superadmin.kasir.destroy')->middleware('auth');
+Route::patch('/superadmin/pengguna/kasir/{id}/toggle-status', [AkunKasirController::class, 'toggleStatus'])->name('superadmin.kasir.toggle-status')->middleware('auth');
 
 
 // Admin Cabang Routes
 Route::get('/admin/dashboard', [AdminDashboardController::class, 'index'])->name('admin.dashboard')->middleware('auth');
 Route::get('/admin/booking', [BookingController::class, 'index'])->name('admin.booking.index')->middleware('auth');
+Route::get('/admin/riwayat', [BookingController::class, 'riwayat'])->name('admin.booking.riwayat')->middleware('auth');
 Route::get('/booking/create', [BookingController::class, 'create'])->name('booking.create');
 Route::post('/admin/booking/store', [BookingController::class, 'store'])
     ->name('admin.booking.store')
@@ -110,6 +131,8 @@ Route::get('/admin/api/search-patient-by-nik', [BookingController::class, 'searc
     ->name('admin.search-patient-by-nik')
     ->middleware('auth');
 Route::post('/admin/booking/{id}/panggil-poli', [BookingController::class, 'panggilPoli'])->name('admin.booking.panggil-poli')->middleware('auth');
+Route::post('/admin/booking/{id}/lewati-poli', [BookingController::class, 'lewatiPoli'])->name('admin.booking.lewati-poli')->middleware('auth');
+Route::post('/admin/booking/{id}/kembalikan-antrian', [BookingController::class, 'kembalikanAntrian'])->name('admin.booking.kembalikan-antrian')->middleware('auth');
 Route::post('/admin/booking/{id}/checkin', [BookingController::class, 'checkinPasien'])->name('admin.booking.checkin')->middleware('auth');
 Route::get('/admin/jadwal-dokter', [JadwalDokterController::class, 'index'])->name('admin.jadwal.index')->middleware('auth');
 Route::get('/admin/jadwal-dokter/create', [JadwalDokterController::class, 'create'])->name('admin.jadwal.create')->middleware('auth');
@@ -130,7 +153,7 @@ Route::post('/superadmin/pengaturan/website', [SettingController::class, 'update
 Route::get('/superadmin/cabang/{slug}', [PerformaCabangController::class, 'show'])->middleware('auth')->name('superadmin.cabang.show');
 
 // Pasien Routes
-Route::prefix('pasien')->middleware('auth')->group(function () {
+Route::prefix('pasien')->middleware(['auth', 'verified'])->group(function () {
     Route::get('/dashboard', [PasienController::class, 'dashboard']);
 
     Route::get('/riwayat', [PasienController::class, 'riwayat']);
@@ -139,8 +162,12 @@ Route::prefix('pasien')->middleware('auth')->group(function () {
     Route::get('/bantuan', function () {
         return view('pasien.bantuan');
     });
-    Route::get('/buat-janji', [PasienController::class, 'buatJanji']);
-    Route::post('/buat-janji', [PasienController::class, 'storeJanji'])->name('pasien.buat-janji.store');
+    
+    // Rute yang membutuhkan profil lengkap
+    Route::middleware(['profile.completed'])->group(function () {
+        Route::get('/buat-janji', [PasienController::class, 'buatJanji']);
+        Route::post('/buat-janji', [PasienController::class, 'storeJanji'])->name('pasien.buat-janji.store');
+    });
     Route::get('/profil/lengkapi', function () {
         return view('pasien.lengkapi-profil');
     });
@@ -157,6 +184,10 @@ Route::prefix('dokter')->middleware('auth')->group(function () {
     Route::get('/jadwal', [DokterDashboardController::class, 'jadwal'])->name('dokter.jadwal');
     Route::get('/antrian', [DokterDashboardController::class, 'antrian'])->name('dokter.antrian');
     Route::get('/riwayat', [DokterDashboardController::class, 'riwayat'])->name('dokter.riwayat');
+
+    // Profil
+    Route::get('/profil', [DokterDashboardController::class, 'profil'])->name('dokter.profil');
+    Route::post('/profil', [DokterDashboardController::class, 'updateProfil'])->name('dokter.profil.update');
 
     // Rekam Medis
     Route::get('/rekam-medis/{id_reservasi}', [\App\Http\Controllers\Dokter\RekamMedisController::class, 'create'])->name('dokter.rekam-medis.create');
@@ -192,6 +223,7 @@ Route::prefix('kasir')->middleware('auth')->group(function () {
     Route::post('/proses-bayar/{id_reservasi}', [KasirDashboardController::class, 'prosesBayar'])->name('kasir.proses-bayar');
     Route::post('/serahkan-obat/{id_reservasi}', [KasirDashboardController::class, 'serahkanObat'])->name('kasir.serahkan-obat');
     Route::get('/cetak-struk/{id_transaksi}', [KasirDashboardController::class, 'cetakStruk'])->name('kasir.cetak-struk');
+    Route::post('/kirim-struk/{id_transaksi}', [KasirDashboardController::class, 'kirimStrukEmail'])->name('kasir.kirim-struk');
 });
 
 

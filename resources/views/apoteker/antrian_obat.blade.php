@@ -85,7 +85,7 @@
                 <button @click="selectPasien({{ json_encode($dataPasien) }})" 
                     x-show="searchQuery === '' || '{{ strtolower($reservasi->nama_pasien ?? ($reservasi->user->nama ?? 'Pasien')) }}'.includes(searchQuery.toLowerCase())"
                     :class="selectedPasien?.id === {{ $reservasi->id_reservasi }} ? 'ring-2 ring-emerald-500 bg-emerald-50 border-transparent shadow-lg shadow-emerald-500/10' : 'bg-white border-slate-200 hover:border-emerald-300 hover:shadow-md'"
-                    class="w-full text-left p-5 rounded-2xl border transition-all duration-300 group relative overflow-hidden {{ $reservasi->status === 'Menunggu Pembayaran' ? 'opacity-70 bg-slate-50/50' : '' }}">
+                    class="w-full text-left p-5 rounded-2xl border transition-all duration-300 group relative overflow-hidden {{ in_array($reservasi->status, ['Menunggu Pembayaran', 'Selesai']) ? 'opacity-70 bg-slate-50/50' : '' }}">
                     
                     <div x-show="selectedPasien?.id === {{ $reservasi->id_reservasi }}" class="absolute left-0 top-0 bottom-0 w-1.5 bg-emerald-500 rounded-l-2xl"></div>
                     
@@ -95,6 +95,8 @@
                         </h3>
                         @if($reservasi->status === 'Menunggu Pembayaran')
                             <span class="text-[9px] font-black text-emerald-600 bg-emerald-50 px-2 py-1 rounded-full border border-emerald-100 uppercase tracking-tighter">Sudah Diserahkan</span>
+                        @elseif($reservasi->status === 'Selesai')
+                            <span class="text-[9px] font-black text-blue-600 bg-blue-50 px-2 py-1 rounded-full border border-blue-100 uppercase tracking-tighter">Selesai</span>
                         @else
                             <span class="text-[10px] font-black text-slate-400 bg-slate-50 px-2 py-0.5 rounded-md border border-slate-100">#{{ $reservasi->id_reservasi }}</span>
                         @endif
@@ -138,6 +140,9 @@
                             </template>
                             <template x-if="selectedPasien?.status === 'Menunggu Pembayaran'">
                                 <span class="bg-slate-500 text-white text-[10px] font-black px-3 py-1 rounded-full uppercase tracking-widest shadow-lg shadow-slate-200 mb-4 inline-block text-center">Sudah Diserahkan & Menunggu Pembayaran</span>
+                            </template>
+                            <template x-if="selectedPasien?.status === 'Selesai'">
+                                <span class="bg-blue-600 text-white text-[10px] font-black px-3 py-1 rounded-full uppercase tracking-widest shadow-lg shadow-blue-200 mb-4 inline-block text-center">Transaksi Selesai</span>
                             </template>
                             <h2 class="text-4xl font-black text-slate-800 tracking-tight flex items-center gap-3">
                                 <span x-text="selectedPasien?.nama"></span>
@@ -199,6 +204,14 @@
                         <div class="bg-slate-50 border-2 border-dashed border-slate-200 p-8 rounded-[2rem] text-center w-full">
                             <p class="font-black text-slate-400 uppercase tracking-widest text-sm mb-2 italic">Tugas Selesai</p>
                             <p class="text-slate-500 font-medium">Obat telah diserahkan. Pasien saat ini sedang dalam proses administrasi di Kasir.</p>
+                        </div>
+                    </div>
+
+                    <div class="mt-12 flex flex-col items-center" x-show="selectedPasien?.status === 'Selesai'">
+                        <div class="w-full h-px bg-slate-100 mb-8"></div>
+                        <div class="bg-blue-50 border-2 border-dashed border-blue-200 p-8 rounded-[2rem] text-center w-full">
+                            <p class="font-black text-blue-400 uppercase tracking-widest text-sm mb-2 italic">Transaksi Lunas</p>
+                            <p class="text-blue-500 font-medium">Transaksi telah selesai dan lunas di kasir. Pelayanan hari ini telah ditutup.</p>
                         </div>
                     </div>
                 </div>

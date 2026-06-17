@@ -51,7 +51,7 @@
                         class="text-sm font-bold text-primary border-b-2 border-primary py-7">Beranda</a>
                     <a href="/pasien/riwayat"
                         class="text-sm font-medium text-slate-500 hover:text-slate-800 transition-colors py-7">Riwayat
-                        Kunjungan</a>
+                        Reservasi</a>
                     <a href="/pasien/bantuan"
                         class="text-sm font-medium text-slate-500 hover:text-slate-800 transition-colors py-7">Bantuan</a>
                 </nav>

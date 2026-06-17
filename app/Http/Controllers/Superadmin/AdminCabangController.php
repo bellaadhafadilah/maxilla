@@ -107,4 +107,17 @@ class AdminCabangController extends Controller
 
         return redirect('/superadmin/pengguna/admin')->with('success', 'Akun admin berhasil dihapus.');
     }
+
+    public function toggleStatus($id)
+    {
+        $user = User::findOrFail($id);
+        if ($user->role !== 'admin') {
+            abort(403);
+        }
+        $user->is_active = !$user->is_active;
+        $user->save();
+
+        $statusText = $user->is_active ? 'diaktifkan' : 'dinonaktifkan (diblokir)';
+        return redirect()->back()->with('success', "Akun admin cabang berhasil {$statusText}.");
+    }
 }

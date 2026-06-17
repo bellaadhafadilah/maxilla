@@ -484,6 +484,29 @@
                         <input type="text" name="teks_copyright" value="{{ $setting->teks_copyright }}" class="w-full border border-slate-200 rounded-xl px-4 py-2 text-sm" placeholder="© 2026 Klinik Maxilla. All Rights Reserved.">
                     </div>
                 </div>
+
+                <!-- Bantuan WA Admin -->
+                <h4 class="font-bold text-slate-800 mt-8 mb-4 border-b border-slate-100 pb-2">Bantuan Admin (WhatsApp)</h4>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-5">
+                    <div>
+                        <label class="block text-sm font-bold text-slate-700 mb-1.5">No. WA Admin Tegal</label>
+                        <input type="text" name="wa_tegal" value="{{ $setting->wa_tegal }}" class="w-full border border-slate-200 rounded-xl px-4 py-2 text-sm mb-3" placeholder="6281234567890">
+                        <label class="block text-sm font-bold text-slate-700 mb-1.5">Template Pesan Tegal</label>
+                        <textarea name="wa_template_tegal" rows="2" class="w-full border border-slate-200 rounded-xl px-4 py-2 text-sm focus:border-blue-500 focus:ring-1 outline-none" placeholder="Halo Maxilla Dental Care Tegal...">{{ $setting->wa_template_tegal ?? 'Halo Maxilla Dental Care Tegal, saya ingin bertanya tentang layanan Anda.' }}</textarea>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-bold text-slate-700 mb-1.5">No. WA Admin Slawi</label>
+                        <input type="text" name="wa_slawi" value="{{ $setting->wa_slawi }}" class="w-full border border-slate-200 rounded-xl px-4 py-2 text-sm mb-3" placeholder="6281234567891">
+                        <label class="block text-sm font-bold text-slate-700 mb-1.5">Template Pesan Slawi</label>
+                        <textarea name="wa_template_slawi" rows="2" class="w-full border border-slate-200 rounded-xl px-4 py-2 text-sm focus:border-blue-500 focus:ring-1 outline-none" placeholder="Halo Maxilla Dental Care Slawi...">{{ $setting->wa_template_slawi ?? 'Halo Maxilla Dental Care Slawi, saya ingin bertanya tentang layanan Anda.' }}</textarea>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-bold text-slate-700 mb-1.5">No. WA Admin Brebes</label>
+                        <input type="text" name="wa_brebes" value="{{ $setting->wa_brebes }}" class="w-full border border-slate-200 rounded-xl px-4 py-2 text-sm mb-3" placeholder="6281234567892">
+                        <label class="block text-sm font-bold text-slate-700 mb-1.5">Template Pesan Brebes</label>
+                        <textarea name="wa_template_brebes" rows="2" class="w-full border border-slate-200 rounded-xl px-4 py-2 text-sm focus:border-blue-500 focus:ring-1 outline-none" placeholder="Halo Maxilla Dental Care Brebes...">{{ $setting->wa_template_brebes ?? 'Halo Maxilla Dental Care Brebes, saya ingin bertanya tentang layanan Anda.' }}</textarea>
+                    </div>
+                </div>
             </div>
         </div>
 

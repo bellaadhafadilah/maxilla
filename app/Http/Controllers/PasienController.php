@@ -88,10 +88,11 @@ class PasienController extends Controller
         // Validasi input
         $validated = $request->validate([
             'nama' => ['required', 'string', 'max:255'],
+            'nik' => ['required', 'string', 'size:16'],
             'no_wa' => ['required', 'string', 'max:20'],
             'alamat' => ['required', 'string', 'max:500'],
             'gender' => ['required', 'in:L,P'],
-            'tanggal_lahir' => ['required', 'date'],
+            'tanggal_lahir' => ['required', 'date', 'before_or_equal:' . now()->subYears(4)->format('Y-m-d')],
             'riwayat_penyakit' => ['nullable', 'string', 'max:1000'],
             'alergi_obat' => ['nullable', 'string', 'max:1000'],
             'file-upload' => ['nullable', 'image', 'mimes:jpeg,png,jpg', 'max:2048'],
@@ -111,6 +112,7 @@ class PasienController extends Controller
 
         // Update data user dasar
         $user->nama = $validated['nama'];
+        $user->nik = $validated['nik'];
         $user->no_wa = $validated['no_wa'];
         $user->save();
 

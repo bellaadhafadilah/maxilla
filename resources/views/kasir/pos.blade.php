@@ -33,11 +33,12 @@
             </div>
             
             <div class="p-6 bg-slate-50 flex gap-3">
-                <button @click="showModal = false" class="flex-1 py-4 bg-white border border-slate-200 text-slate-400 rounded-2xl font-black uppercase tracking-widest text-xs hover:bg-slate-100 hover:text-slate-600 transition-all">
+                <button x-show="!isAlertOnly" @click="showModal = false" class="flex-1 py-4 bg-white border border-slate-200 text-slate-400 rounded-2xl font-black uppercase tracking-widest text-xs hover:bg-slate-100 hover:text-slate-600 transition-all">
                     Batal
                 </button>
                 <button @click="confirmAction()" class="flex-1 py-4 text-white rounded-2xl font-black uppercase tracking-widest text-xs shadow-lg transition-all active:scale-95 bg-blue-600 hover:bg-blue-700 shadow-blue-500/20">
-                    Ya, Lanjutkan
+                    <span x-show="!isAlertOnly">Ya, Lanjutkan</span>
+                    <span x-show="isAlertOnly">OK Mengerti</span>
                 </button>
             </div>
         </div>
@@ -279,10 +280,16 @@
                             </div>
                             <h4 class="text-2xl font-black text-slate-800 mb-2">Pembayaran Lunas</h4>
                             <p class="text-slate-400 font-medium mb-8 uppercase tracking-widest text-xs">Transaksi telah selesai diproses.</p>
-                            <button @click="triggerStruk(selectedPasien?.id_transaksi)" class="w-full py-4 bg-slate-800 text-white rounded-2xl font-black uppercase tracking-widest text-xs shadow-xl transition-all hover:bg-slate-700 active:scale-95 flex items-center justify-center gap-2">
-                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path></svg>
-                                Cetak Struk
-                            </button>
+                            <div class="flex flex-col gap-3 w-full">
+                                <button @click="triggerStruk(selectedPasien?.id_transaksi)" class="w-full py-4 bg-slate-800 text-white rounded-2xl font-black uppercase tracking-widest text-xs shadow-xl transition-all hover:bg-slate-700 active:scale-95 flex items-center justify-center gap-3">
+                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path></svg>
+                                    Cetak Struk
+                                </button>
+                                <button @click="kirimStruk(selectedPasien?.id_transaksi)" class="w-full py-4 bg-blue-600 text-white rounded-2xl font-black uppercase tracking-widest text-xs shadow-xl transition-all hover:bg-blue-700 active:scale-95 flex items-center justify-center gap-3">
+                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path></svg>
+                                    Kirim ke Email
+                                </button>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -356,15 +363,31 @@
                 return parseInt(number, 10).toLocaleString('id-ID');
             },
 
+            isAlertOnly: false,
+
             triggerConfirm(type, title, message, formId) {
                 this.modalType = type;
                 this.modalTitle = title;
                 this.modalMessage = message;
                 this.targetFormId = formId;
+                this.isAlertOnly = false;
+                this.showModal = true;
+            },
+
+            triggerAlert(title, message) {
+                this.modalType = 'info';
+                this.modalTitle = title;
+                this.modalMessage = message;
+                this.targetFormId = null;
+                this.isAlertOnly = true;
                 this.showModal = true;
             },
 
             confirmAction() {
+                if (this.isAlertOnly) {
+                    this.showModal = false;
+                    return;
+                }
                 if (this.targetFormId) {
                     document.getElementById(this.targetFormId).submit();
                 }
@@ -375,8 +398,38 @@
                 if (transaksiId) {
                     window.open("/kasir/cetak-struk/" + transaksiId, "_blank", "width=400,height=600");
                 } else {
-                    alert('Data transaksi tidak ditemukan.');
+                    this.triggerAlert('Informasi', 'Data transaksi tidak ditemukan.');
                 }
+            },
+            kirimStruk(transaksiId) {
+                if (!transaksiId) {
+                    this.triggerAlert('Informasi', 'Data transaksi tidak ditemukan.');
+                    return;
+                }
+                
+                const btnOriginalText = document.activeElement.innerHTML;
+                document.activeElement.innerHTML = '<span class="animate-pulse">Mengirim...</span>';
+                
+                fetch(`/kasir/kirim-struk/${transaksiId}`, {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                        'Accept': 'application/json'
+                    }
+                })
+                .then(res => res.json())
+                .then(data => {
+                    document.activeElement.innerHTML = btnOriginalText;
+                    if (data.success) {
+                        this.triggerAlert('Berhasil', data.message);
+                    } else {
+                        this.triggerAlert('Error', data.message);
+                    }
+                })
+                .catch(err => {
+                    document.activeElement.innerHTML = btnOriginalText;
+                    this.triggerAlert('Kesalahan', 'Terjadi kesalahan koneksi.');
+                });
             },
             init() {
                 // Jika baru saja menyelesaikan transaksi, pilih otomatis pasien tersebut

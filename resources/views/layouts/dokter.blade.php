@@ -9,11 +9,12 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
     <script defer src="https://cdn.jsdelivr.net/npm/@alpinejs/collapse@3.x.x/dist/cdn.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Poppins:wght@500;600;700&display=swap" rel="stylesheet">
     <script>
         tailwind.config = {
             theme: {
                 extend: {
-                    fontFamily: { sans: ['Arial', 'Helvetica', 'sans-serif'], heading: ['Arial', 'Helvetica', 'sans-serif'] },
+                    fontFamily: { sans: ['Inter', 'sans-serif'], heading: ['Poppins', 'sans-serif'] },
                     colors: { primary: '#2563eb', secondary: '#1e293b', surface: '#f8fafc' }
                 }
             }
@@ -40,7 +41,7 @@
 </head>
 
 <body class="bg-white text-slate-800 font-sans antialiased h-screen flex overflow-hidden"
-    x-data="{ sidebarOpen: false }">
+    x-data="{ sidebarOpen: false, showLogoutConfirm: false }">
 
     <!-- Mobile Sidebar Overlay -->
     <div x-show="sidebarOpen" x-cloak class="fixed inset-0 z-40 bg-slate-900/50 backdrop-blur-sm md:hidden"
@@ -135,10 +136,13 @@
         <!-- Sidebar Footer -->
         <div class="p-4 border-t border-blue-200 bg-white/30">
             <div class="flex items-center gap-3">
-                <div
-                    class="h-10 w-10 rounded-full bg-gradient-to-tr from-blue-600 to-indigo-500 flex items-center justify-center text-white font-bold shadow-md shrink-0">
-                    {{ substr(auth()->user()->nama ?? 'D', 0, 1) }}
-                </div>
+                @if(auth()->user()->foto)
+                    <img src="{{ Storage::url(auth()->user()->foto) }}" alt="Foto Profil" class="h-10 w-10 rounded-full object-cover shadow-md shrink-0 border border-blue-200">
+                @else
+                    <div class="h-10 w-10 rounded-full bg-gradient-to-tr from-blue-600 to-indigo-500 flex items-center justify-center text-white font-bold shadow-md shrink-0">
+                        {{ substr(auth()->user()->nama ?? 'D', 0, 1) }}
+                    </div>
+                @endif
                 <div class="overflow-hidden">
                     <p class="text-sm font-bold text-slate-800 truncate">{{ auth()->user()->nama ?? 'Dokter' }}</p>
                     <p class="text-[11px] font-bold text-blue-500 uppercase truncate">
@@ -175,10 +179,13 @@
                 <div x-data="{ open: false }" class="relative">
                     <button @click="open = !open" @click.away="open = false" type="button"
                         class="flex items-center gap-3 rounded-full focus:outline-none focus:ring-2 focus:ring-blue-500 p-1 pr-3 hover:bg-slate-100 transition-colors border border-transparent hover:border-slate-200">
-                        <div
-                            class="h-8 w-8 rounded-full bg-gradient-to-tr from-blue-600 to-indigo-500 flex items-center justify-center text-white font-bold shadow-sm">
-                            {{ substr(auth()->user()->nama ?? 'D', 0, 1) }}
-                        </div>
+                        @if(auth()->user()->foto)
+                            <img src="{{ Storage::url(auth()->user()->foto) }}" alt="Foto Profil" class="h-8 w-8 rounded-full object-cover shadow-sm border border-slate-200">
+                        @else
+                            <div class="h-8 w-8 rounded-full bg-gradient-to-tr from-blue-600 to-indigo-500 flex items-center justify-center text-white font-bold shadow-sm">
+                                {{ substr(auth()->user()->nama ?? 'D', 0, 1) }}
+                            </div>
+                        @endif
                         <div class="hidden sm:block text-left">
                             <p class="text-sm font-bold text-slate-800 leading-none">
                                 {{ auth()->user()->nama ?? 'Dokter' }}
@@ -204,11 +211,11 @@
                             <p class="text-[11px] text-slate-500 truncate">{{ auth()->user()->email }}</p>
                         </div>
 
-                        <a href="#"
+                        <a href="{{ route('dokter.profil') }}"
                             class="block px-4 py-2 text-sm text-slate-600 hover:bg-slate-50 hover:text-blue-600 font-bold transition-colors">Pengaturan
                             Profil</a>
                         <div class="h-px bg-slate-100 my-1"></div>
-                        <form action="{{ route('logout') }}" method="POST" class="w-full">
+                        <form x-ref="logoutForm" action="{{ route('logout') }}" method="POST" class="w-full">
                             @csrf
                             <button type="button" @click="showLogoutConfirm = true"
                                 class="block w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 font-bold transition-colors">Keluar

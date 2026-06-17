@@ -23,19 +23,9 @@ class LaporanPasienController extends Controller
             'transaksi'
         ]);
 
-        // Filter by cabang
+        // Filter by cabang (case-insensitive in DB or handled by strtolower)
         if ($cabang !== 'semua') {
-            $query->where('cabang', $cabang);
-        }
-
-        // Filter by search (patient name or RM number)
-        if ($search) {
-            $query->where(function ($q) use ($search) {
-                $q->where('nama_pasien', 'like', '%' . $search . '%')
-                  ->orWhereHas('user', function ($subQ) use ($search) {
-                      $subQ->where('nama', 'like', '%' . $search . '%');
-                  });
-            });
+            $query->where('cabang', 'like', $cabang);
         }
 
         // Filter by date range
@@ -46,7 +36,9 @@ class LaporanPasienController extends Controller
         $riwayatPasien = $query->orderBy('tanggal', 'desc')->get();
 
         // Get distinct cabang list
-        $cabangList = Reservasi::distinct()->pluck('cabang')->sort()->values();
+        $cabangList = Reservasi::pluck('cabang')->filter()->map(function($c) { 
+            return ucfirst(strtolower($c)); 
+        })->unique()->sort()->values();
 
         // Calculate statistics
         $totalKunjungan = $riwayatPasien->count();
@@ -76,6 +68,38 @@ class LaporanPasienController extends Controller
         
         $cancelRate = $totalAllVisits > 0 ? round(($totalBatal / $totalAllVisits) * 100, 1) : 0;
 
+        // Data for charts
+        $pasienPerCabang = [];
+        $trenKunjungan = [];
+        $statusReservasi = [];
+
+        foreach ($riwayatPasien as $res) {
+            $cbg = ucfirst(strtolower($res->cabang ?? 'Unknown'));
+            $date = \Carbon\Carbon::parse($res->tanggal)->format('Y-m-d');
+            $status = $res->status ?? 'Unknown';
+
+            // Pasien per cabang
+            if (!isset($pasienPerCabang[$cbg])) {
+                $pasienPerCabang[$cbg] = 0;
+            }
+            $pasienPerCabang[$cbg]++;
+
+            // Tren Kunjungan
+            if (!isset($trenKunjungan[$date])) {
+                $trenKunjungan[$date] = 0;
+            }
+            $trenKunjungan[$date]++;
+
+            // Status Reservasi
+            if (!isset($statusReservasi[$status])) {
+                $statusReservasi[$status] = 0;
+            }
+            $statusReservasi[$status]++;
+        }
+
+        // Sort tren by date
+        ksort($trenKunjungan);
+
         return view('superadmin.arsip_laporan.laporan-pasien', [
             'riwayatPasien' => $riwayatPasien,
             'cabangList' => $cabangList,
@@ -87,6 +111,9 @@ class LaporanPasienController extends Controller
             'search' => $search,
             'startDate' => $startDate,
             'endDate' => $endDate,
+            'pasienPerCabang' => $pasienPerCabang,
+            'trenKunjungan' => $trenKunjungan,
+            'statusReservasi' => $statusReservasi
         ]);
     }
 }

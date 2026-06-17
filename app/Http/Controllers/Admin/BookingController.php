@@ -14,16 +14,51 @@ class BookingController extends Controller
     /**
      * Display a listing of bookings/queue.
      */
-    public function index()
+    public function index(Request $request)
     {
         $adminCabang = auth()->user()->cabang ?? 'utama';
+        
+        $tanggal_awal = $request->query('tanggal_awal', date('Y-m-d'));
+        $tanggal_akhir = $request->query('tanggal_akhir', date('Y-m-d'));
 
-        // Get reservations for today in the user's branch
+        // Get reservations for the selected date range in the user's branch
         $reservasis = Reservasi::with('user')
             ->where('cabang', $adminCabang)
-            ->whereDate('tanggal', date('Y-m-d'))
+            ->whereBetween('tanggal', [$tanggal_awal, $tanggal_akhir])
+            ->orderBy('tanggal', 'asc')
             ->orderBy('jam', 'asc')
             ->get();
+
+        // Auto-expire reservations that are past their scheduled time
+        $now = \Carbon\Carbon::now();
+        foreach ($reservasis as $res) {
+            if (strtolower($res->status) === 'menunggu') {
+                $isExpired = false;
+                $resDate = \Carbon\Carbon::parse($res->tanggal);
+
+                if ($resDate->isPast() && !$resDate->isToday()) {
+                    $isExpired = true;
+                } elseif ($resDate->isToday()) {
+                    $waktu = strtolower($res->jam);
+                    if (preg_match('/^([01]?[0-9]|2[0-3]):[0-5][0-9]/', $waktu)) {
+                        $resTime = \Carbon\Carbon::parse($res->tanggal . ' ' . $waktu);
+                        if ($now->greaterThan($resTime)) {
+                            $isExpired = true;
+                        }
+                    } else {
+                        // For shifts: Pagi (ends 12:00), Siang (ends 16:00), Sore (ends 21:00)
+                        if ($waktu === 'pagi' && $now->format('H:i') > '12:00') $isExpired = true;
+                        elseif ($waktu === 'siang' && $now->format('H:i') > '16:00') $isExpired = true;
+                        elseif ($waktu === 'sore' && $now->format('H:i') > '21:00') $isExpired = true;
+                    }
+                }
+
+                if ($isExpired) {
+                    $res->update(['status' => 'Kadaluarsa']);
+                    $res->status = 'Kadaluarsa';
+                }
+            }
+        }
 
         $bookings = $reservasis->map(function($reservasi, $index) {
             $waktu = $reservasi->jam;
@@ -53,7 +88,7 @@ class BookingController extends Controller
             'diproses' => $bookings->filter(fn($b) => in_array($b['status'], ['diperiksa', 'menunggu antrian']))->count(),
         ];
 
-        return view('admin.booking.index', compact('bookings', 'stats'));
+        return view('admin.booking.index', compact('bookings', 'stats', 'tanggal_awal', 'tanggal_akhir'));
     }
 
     /**
@@ -265,18 +300,74 @@ public function checkinPasien($id)
     return back()->with('success', 'Pasien ' . ($reservasi->nama_pasien ?? ($reservasi->user->nama ?? '')) . ' berhasil check-in!');
 }
 
-public function panggilPoli(Request $request, $id)
-{
-    $reservasi = Reservasi::with('user')->findOrFail($id);
+    public function panggilPoli(Request $request, $id)
+    {
+        $reservasi = Reservasi::with('user')->findOrFail($id);
 
-    // Hanya bisa panggil kalau pasien sudah hadir (check-in)
-    if (strtolower($reservasi->status) !== 'hadir') {
-        return back()->with('error', 'Pasien belum melakukan check-in atau sudah dipanggil.');
+        // Hanya bisa panggil kalau pasien sudah hadir (check-in)
+        if (strtolower($reservasi->status) !== 'hadir' && strtolower($reservasi->status) !== 'menunggu antrian') {
+            return back()->with('error', 'Pasien belum melakukan check-in atau status tidak valid.');
+        }
+
+        // Langsung set Diperiksa — pasien masuk antrian dokter sekarang
+        $reservasi->update(['status' => 'Diperiksa']);
+
+        return back()->with('success', 'Pasien ' . ($reservasi->nama_pasien ?? ($reservasi->user->nama ?? '')) . ' berhasil dipanggil dan masuk antrian dokter!');
     }
 
-    // Langsung set Diperiksa — pasien masuk antrian dokter sekarang
-    $reservasi->update(['status' => 'Diperiksa']);
+    public function lewatiPoli(Request $request, $id)
+    {
+        $reservasi = Reservasi::findOrFail($id);
 
-    return back()->with('success', 'Pasien ' . ($reservasi->nama_pasien ?? ($reservasi->user->nama ?? '')) . ' berhasil dipanggil dan masuk antrian dokter!');
-}
+        if (!in_array(strtolower($reservasi->status), ['hadir', 'diperiksa', 'menunggu antrian'])) {
+            return back()->with('error', 'Status reservasi tidak valid untuk ditangguhkan.');
+        }
+
+        $reservasi->update(['status' => 'Ditangguhkan']);
+
+        return back()->with('success', 'Antrean pasien ' . ($reservasi->nama_pasien ?? ($reservasi->user->nama ?? '')) . ' ditangguhkan (dilewati).');
+    }
+
+    public function kembalikanAntrian(Request $request, $id)
+    {
+        $reservasi = Reservasi::findOrFail($id);
+
+        if (strtolower($reservasi->status) !== 'ditangguhkan') {
+            return back()->with('error', 'Pasien tidak dalam status ditangguhkan.');
+        }
+
+        $reservasi->update(['status' => 'Hadir']);
+
+        return back()->with('success', 'Pasien ' . ($reservasi->nama_pasien ?? ($reservasi->user->nama ?? '')) . ' dikembalikan ke antrean.');
+    }
+
+    /**
+     * Display a listing of reservation history.
+     */
+    public function riwayat(Request $request)
+    {
+        $adminCabang = auth()->user()->cabang ?? 'utama';
+        
+        $tanggal_awal = $request->query('tanggal_awal');
+        $tanggal_akhir = $request->query('tanggal_akhir');
+        $nama = $request->query('nama');
+
+        $query = Reservasi::with('user')
+            ->where('cabang', $adminCabang)
+            ->whereIn('status', ['Selesai', 'Dibatalkan', 'Kadaluarsa']);
+
+        if ($tanggal_awal && $tanggal_akhir) {
+            $query->whereBetween('tanggal', [$tanggal_awal, $tanggal_akhir]);
+        }
+        
+        if ($nama) {
+            $query->where('nama_pasien', 'like', '%' . $nama . '%');
+        }
+        
+        $reservasis = $query->orderBy('tanggal', 'desc')
+                            ->orderBy('jam', 'desc')
+                            ->get();
+
+        return view('admin.booking.riwayat', compact('reservasis', 'tanggal_awal', 'tanggal_akhir', 'nama'));
+    }
 }

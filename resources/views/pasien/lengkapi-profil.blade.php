@@ -23,8 +23,9 @@
                 <span class="font-heading font-bold text-xl tracking-tight text-secondary">Maxilla <span class="text-primary hidden sm:inline">Dental Care</span></span>
             </div>
             <nav class="hidden md:flex items-center gap-8">
-                <a href="/pasien/dashboard" class="text-sm font-bold text-primary border-b-2 border-primary py-7">Beranda</a>
-                <a href="/pasien/riwayat" class="text-sm font-medium text-slate-500 hover:text-slate-800 transition-colors py-7">Riwayat Kunjungan</a>
+                <a href="/pasien/dashboard" class="text-sm font-medium text-slate-500 hover:text-slate-800 transition-colors py-7">Beranda</a>
+                <a href="/pasien/riwayat" class="text-sm font-medium text-slate-500 hover:text-slate-800 transition-colors py-7">Riwayat Reservasi</a>
+                <a href="#" class="text-sm font-bold text-primary border-b-2 border-primary py-7">Profil</a>
             </nav>
             <div class="flex items-center gap-4">
                 <a href="/pasien/dashboard" class="text-sm font-bold text-slate-500 hover:text-slate-800 transition-colors">Kembali ke Dashboard</a>
@@ -57,12 +58,21 @@
                     </div>
                 </div>
 
-                <div>
-                    <label class="block text-sm font-bold text-slate-700 mb-2">No. WhatsApp / HP</label>
-                    <input type="text" name="no_wa" value="{{ old('no_wa', auth()->user()->no_wa ?? '') }}" class="block w-full px-4 py-3 border @error('no_wa') border-red-500 @else border-slate-200 @enderror rounded-xl focus:ring-primary focus:border-primary text-sm bg-slate-50 focus:bg-white transition-colors outline-none" placeholder="Contoh: 08123456789" required>
-                    @error('no_wa')
-                        <p class="text-red-500 text-xs mt-1 font-medium">{{ $message }}</p>
-                    @enderror
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                    <div>
+                        <label class="block text-sm font-bold text-slate-700 mb-2">No. KTP (NIK)</label>
+                        <input type="text" name="nik" value="{{ old('nik', auth()->user()->nik ?? '') }}" class="block w-full px-4 py-3 border @error('nik') border-red-500 @else border-slate-200 @enderror rounded-xl focus:ring-primary focus:border-primary text-sm bg-slate-50 focus:bg-white transition-colors outline-none" placeholder="16 Digit NIK" required minlength="16" maxlength="16" pattern="[0-9]{16}" oninput="this.value = this.value.replace(/[^0-9]/g, '');">
+                        @error('nik')
+                            <p class="text-red-500 text-xs mt-1 font-medium">{{ $message }}</p>
+                        @enderror
+                    </div>
+                    <div>
+                        <label class="block text-sm font-bold text-slate-700 mb-2">No. WhatsApp / HP</label>
+                        <input type="text" name="no_wa" value="{{ old('no_wa', auth()->user()->no_wa ?? '') }}" class="block w-full px-4 py-3 border @error('no_wa') border-red-500 @else border-slate-200 @enderror rounded-xl focus:ring-primary focus:border-primary text-sm bg-slate-50 focus:bg-white transition-colors outline-none" placeholder="Contoh: 08123456789" required>
+                        @error('no_wa')
+                            <p class="text-red-500 text-xs mt-1 font-medium">{{ $message }}</p>
+                        @enderror
+                    </div>
                 </div>
 
                 <!-- Alamat Domisili -->
@@ -91,7 +101,7 @@
                     <!-- Tanggal Lahir -->
                     <div>
                         <label class="block text-sm font-bold text-slate-700 mb-2">Tanggal Lahir</label>
-                        <input type="date" name="tanggal_lahir" value="{{ old('tanggal_lahir', auth()->user()->pasien->tanggal_lahir ?? '') }}" class="block w-full px-4 py-3 border @error('tanggal_lahir') border-red-500 @else border-slate-200 @enderror rounded-xl focus:ring-primary focus:border-primary text-sm bg-slate-50 focus:bg-white transition-colors outline-none cursor-pointer" required>
+                        <input type="date" id="tanggal_lahir_input" name="tanggal_lahir" value="{{ old('tanggal_lahir', auth()->user()->pasien->tanggal_lahir ?? '') }}" max="{{ now()->subYears(4)->format('Y-m-d') }}" class="block w-full px-4 py-3 border @error('tanggal_lahir') border-red-500 @else border-slate-200 @enderror rounded-xl focus:ring-primary focus:border-primary text-sm bg-slate-50 focus:bg-white transition-colors outline-none cursor-pointer" required>
                         @error('tanggal_lahir')
                             <p class="text-red-500 text-xs mt-1 font-medium">{{ $message }}</p>
                         @enderror
@@ -142,7 +152,7 @@
                 </div>
 
                 <div class="pt-6 border-t border-slate-100">
-                    <button type="submit" class="w-full sm:w-auto px-8 py-3.5 bg-green-500 text-white font-bold rounded-xl hover:bg-green-600 transition-colors shadow-[0_4px_10px_rgb(34,197,94,0.3)]">
+                    <button type="submit" id="submit_btn" class="w-full sm:w-auto px-8 py-3.5 bg-green-500 text-white font-bold rounded-xl hover:bg-green-600 transition-colors shadow-[0_4px_10px_rgb(34,197,94,0.3)] disabled:opacity-50 disabled:cursor-not-allowed">
                         Simpan & Lengkapi Profil
                     </button>
                     <a href="/pasien/dashboard" class="w-full sm:w-auto mt-3 sm:mt-0 sm:ml-3 px-8 py-3.5 bg-slate-100 text-slate-700 font-bold rounded-xl hover:bg-slate-200 transition-colors inline-block text-center border border-slate-200">
@@ -153,5 +163,31 @@
         </div>
     </main>
 
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const tglInput = document.getElementById('tanggal_lahir_input');
+            const submitBtn = document.getElementById('submit_btn');
+            
+            // Batas maksimal 4 tahun lalu
+            const maxDateStr = '{{ now()->subYears(4)->format("Y-m-d") }}';
+            const maxDate = new Date(maxDateStr);
+
+            if(tglInput) {
+                tglInput.addEventListener('input', function() {
+                    if(this.value) {
+                        const selectedDate = new Date(this.value);
+                        if(selectedDate > maxDate) {
+                            submitBtn.disabled = true;
+                        } else {
+                            submitBtn.disabled = false;
+                        }
+                    }
+                });
+                
+                // Trigger check on load
+                tglInput.dispatchEvent(new Event('input'));
+            }
+        });
+    </script>
 </body>
 </html>

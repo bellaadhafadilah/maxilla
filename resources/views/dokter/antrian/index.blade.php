@@ -137,6 +137,11 @@
                                     <svg class="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3.5" d="M5 13l4 4L19 7"></path></svg>
                                     Selesai
                                 </span>
+                            @elseif(in_array(strtolower($antrian->status), ['batal', 'dibatalkan']))
+                                <span class="flex items-center gap-2 px-3.5 py-1.5 bg-red-50 text-red-600 rounded-full text-[10px] font-black uppercase tracking-wider leading-none border border-red-100">
+                                    <svg class="w-3 h-3 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12"></path></svg>
+                                    Batal
+                                </span>
                             @else
                                 <span class="flex items-center gap-2 px-3.5 py-1.5 bg-slate-100 text-slate-600 rounded-full text-[10px] font-black uppercase tracking-wider leading-none border border-slate-200">
                                     {{ $antrian->status }}
@@ -209,6 +214,10 @@
                         @elseif(in_array(strtolower($antrian->status), ['selesai', 'menunggu obat', 'menunggu pembayaran']))
                             <span class="flex items-center gap-1.5 px-2 py-0.5 bg-emerald-500 text-white rounded-md text-[9px] font-black uppercase tracking-wider leading-none shadow-sm shadow-emerald-100">
                                 Selesai
+                            </span>
+                        @elseif(in_array(strtolower($antrian->status), ['batal', 'dibatalkan']))
+                            <span class="flex items-center gap-1.5 px-2 py-0.5 bg-red-50 text-red-600 rounded-md text-[9px] font-black uppercase tracking-wider leading-none border border-red-100">
+                                Batal
                             </span>
                         @else
                             <span class="flex items-center gap-1.5 px-2 py-0.5 bg-slate-100 text-slate-600 rounded-md text-[9px] font-black uppercase tracking-wider leading-none border border-slate-200">

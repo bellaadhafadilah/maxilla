@@ -89,4 +89,17 @@ class AkunKasirController extends Controller
         User::findOrFail($id)->delete();
         return redirect()->route('superadmin.kasir.index')->with('success', 'Akun kasir berhasil dihapus.');
     }
+
+    public function toggleStatus($id)
+    {
+        $user = User::findOrFail($id);
+        if ($user->role !== 'kasir') {
+            abort(403);
+        }
+        $user->is_active = !$user->is_active;
+        $user->save();
+
+        $statusText = $user->is_active ? 'diaktifkan' : 'dinonaktifkan (diblokir)';
+        return redirect()->back()->with('success', "Akun kasir berhasil {$statusText}.");
+    }
 }

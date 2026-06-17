@@ -30,10 +30,31 @@
                                 <svg class="w-5 h-5 text-slate-400 mt-0.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
                                 <p class="text-slate-600 text-sm">{{ $cabang['address'] ?? '' }}</p>
                             </div>
-                            <div class="mt-auto pt-2">
+                            @php
+                                $cabangName = strtolower($cabang['name'] ?? '');
+                                $waNumber = '6281234567890';
+                                $waTemplate = 'Halo Maxilla Dental Care, saya ingin bertanya tentang layanan Anda.';
+                                
+                                if (str_contains($cabangName, 'tegal')) { 
+                                    $waNumber = $setting->wa_tegal ?? '6281234567890'; 
+                                    $waTemplate = $setting->wa_template_tegal ?? 'Halo Maxilla Dental Care Tegal, saya ingin bertanya tentang layanan Anda.';
+                                } elseif (str_contains($cabangName, 'slawi')) { 
+                                    $waNumber = $setting->wa_slawi ?? '6281234567891'; 
+                                    $waTemplate = $setting->wa_template_slawi ?? 'Halo Maxilla Dental Care Slawi, saya ingin bertanya tentang layanan Anda.';
+                                } elseif (str_contains($cabangName, 'brebes')) { 
+                                    $waNumber = $setting->wa_brebes ?? '6281234567892'; 
+                                    $waTemplate = $setting->wa_template_brebes ?? 'Halo Maxilla Dental Care Brebes, saya ingin bertanya tentang layanan Anda.';
+                                }
+                                
+                                $waUrl = "https://wa.me/{$waNumber}?text=" . urlencode($waTemplate);
+                            @endphp
+                            <div class="mt-auto pt-2 flex items-center gap-2">
                                 <button @click.prevent="showModal = true; activeBranch = '{{ Str::slug(Str::remove('Maxilla Dental Care', $cabang['name'] ?? '')) }}'" class="block w-full text-center px-4 py-2 bg-sky-50 hover:bg-sky-100 text-primary font-bold rounded-lg transition-colors">
                                     Detail Cabang
                                 </button>
+                                <a href="{{ $waUrl }}" target="_blank" class="flex items-center justify-center w-10 h-10 shrink-0 bg-green-50 text-green-600 hover:bg-green-100 hover:text-green-700 rounded-lg transition-colors" title="Hubungi WA Admin">
+                                    <svg class="w-7 h-7" fill="currentColor" viewBox="0 0 24 24"><path d="M12.031 6.172c-3.181 0-5.767 2.586-5.768 5.766-.001 1.298.38 2.27 1.019 3.287l-.582 2.128 2.182-.573c.978.58 1.911.928 3.145.929 3.178 0 5.767-2.587 5.768-5.766.001-3.187-2.575-5.77-5.764-5.771zm3.392 8.244c-.144.405-.837.774-1.17.824-.299.045-.677.063-1.092-.069-.252-.08-.575-.187-.988-.365-1.739-.751-2.874-2.502-2.961-2.617-.087-.116-.708-.94-.708-1.793s.448-1.273.607-1.446c.159-.173.346-.217.462-.217l.332.006c.106.005.249-.04.39.298.144.347.491 1.2.534 1.287.043.087.072.188.014.304-.058.116-.087.188-.173.289l-.26.304c-.087.086-.177.18-.076.354.101.174.449.741.964 1.201.662.591 1.221.774 1.394.86s.274.072.376-.043c.101-.116.433-.506.549-.68.116-.173.231-.145.39-.087s1.011.477 1.184.564c.173.087.289.129.332.202.043.073.043.423-.101.827z"></path></svg>
+                                </a>
                             </div>
                         </div>
                     </div>
@@ -51,10 +72,16 @@
                                 <svg class="w-5 h-5 text-slate-400 mt-0.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
                                 <p class="text-slate-600 text-sm">Jl. Letjen Suprapto, Slawi, Kab. Tegal</p>
                             </div>
-                            <div class="mt-auto pt-2">
+                            @php
+                                $waTextSlawi = urlencode($setting->wa_template_slawi ?? 'Halo Maxilla Dental Care Slawi, saya ingin bertanya tentang layanan Anda.');
+                            @endphp
+                            <div class="mt-auto pt-2 flex items-center gap-2">
                                 <button @click.prevent="showModal = true; activeBranch = 'slawi'" class="block w-full text-center px-4 py-2 bg-sky-50 hover:bg-sky-100 text-primary font-bold rounded-lg transition-colors">
                                     Detail Cabang
                                 </button>
+                                <a href="https://wa.me/{{ $setting->wa_slawi ?? '6281234567891' }}?text={{ $waTextSlawi }}" target="_blank" class="flex items-center justify-center w-10 h-10 shrink-0 bg-green-50 text-green-600 hover:bg-green-100 hover:text-green-700 rounded-lg transition-colors" title="Hubungi WA Admin Slawi">
+                                    <svg class="w-7 h-7" fill="currentColor" viewBox="0 0 24 24"><path d="M12.031 6.172c-3.181 0-5.767 2.586-5.768 5.766-.001 1.298.38 2.27 1.019 3.287l-.582 2.128 2.182-.573c.978.58 1.911.928 3.145.929 3.178 0 5.767-2.587 5.768-5.766.001-3.187-2.575-5.77-5.764-5.771zm3.392 8.244c-.144.405-.837.774-1.17.824-.299.045-.677.063-1.092-.069-.252-.08-.575-.187-.988-.365-1.739-.751-2.874-2.502-2.961-2.617-.087-.116-.708-.94-.708-1.793s.448-1.273.607-1.446c.159-.173.346-.217.462-.217l.332.006c.106.005.249-.04.39.298.144.347.491 1.2.534 1.287.043.087.072.188.014.304-.058.116-.087.188-.173.289l-.26.304c-.087.086-.177.18-.076.354.101.174.449.741.964 1.201.662.591 1.221.774 1.394.86s.274.072.376-.043c.101-.116.433-.506.549-.68.116-.173.231-.145.39-.087s1.011.477 1.184.564c.173.087.289.129.332.202.043.073.043.423-.101.827z"></path></svg>
+                                </a>
                             </div>
                         </div>
                     </div>
@@ -71,10 +98,16 @@
                                 <svg class="w-5 h-5 text-slate-400 mt-0.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
                                 <p class="text-slate-600 text-sm">Jl. Kapten Sudibyo, Randugunting, Kec. Tegal Sel., Kota Tegal, Jawa Tengah</p>
                             </div>
-                            <div class="mt-auto pt-2">
+                            @php
+                                $waTextTegal = urlencode($setting->wa_template_tegal ?? 'Halo Maxilla Dental Care Tegal, saya ingin bertanya tentang layanan Anda.');
+                            @endphp
+                            <div class="mt-auto pt-2 flex items-center gap-2">
                                 <button @click.prevent="showModal = true; activeBranch = 'tegal'" class="block w-full text-center px-4 py-2 bg-sky-50 hover:bg-sky-100 text-primary font-bold rounded-lg transition-colors">
                                     Detail Cabang
                                 </button>
+                                <a href="https://wa.me/{{ $setting->wa_tegal ?? '6281234567890' }}?text={{ $waTextTegal }}" target="_blank" class="flex items-center justify-center w-10 h-10 shrink-0 bg-green-50 text-green-600 hover:bg-green-100 hover:text-green-700 rounded-lg transition-colors" title="Hubungi WA Admin Tegal">
+                                    <svg class="w-7 h-7" fill="currentColor" viewBox="0 0 24 24"><path d="M12.031 6.172c-3.181 0-5.767 2.586-5.768 5.766-.001 1.298.38 2.27 1.019 3.287l-.582 2.128 2.182-.573c.978.58 1.911.928 3.145.929 3.178 0 5.767-2.587 5.768-5.766.001-3.187-2.575-5.77-5.764-5.771zm3.392 8.244c-.144.405-.837.774-1.17.824-.299.045-.677.063-1.092-.069-.252-.08-.575-.187-.988-.365-1.739-.751-2.874-2.502-2.961-2.617-.087-.116-.708-.94-.708-1.793s.448-1.273.607-1.446c.159-.173.346-.217.462-.217l.332.006c.106.005.249-.04.39.298.144.347.491 1.2.534 1.287.043.087.072.188.014.304-.058.116-.087.188-.173.289l-.26.304c-.087.086-.177.18-.076.354.101.174.449.741.964 1.201.662.591 1.221.774 1.394.86s.274.072.376-.043c.101-.116.433-.506.549-.68.116-.173.231-.145.39-.087s1.011.477 1.184.564c.173.087.289.129.332.202.043.073.043.423-.101.827z"></path></svg>
+                                </a>
                             </div>
                         </div>
                     </div>
@@ -91,10 +124,16 @@
                                 <svg class="w-5 h-5 text-slate-400 mt-0.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
                                 <p class="text-slate-600 text-sm">Jl. Jend. Sudirman, Brebes, Kec. Brebes, Kabupaten Brebes, Jawa Tengah</p>
                             </div>
-                            <div class="mt-auto pt-2">
+                            @php
+                                $waTextBrebes = urlencode($setting->wa_template_brebes ?? 'Halo Maxilla Dental Care Brebes, saya ingin bertanya tentang layanan Anda.');
+                            @endphp
+                            <div class="mt-auto pt-2 flex items-center gap-2">
                                 <button @click.prevent="showModal = true; activeBranch = 'brebes'" class="block w-full text-center px-4 py-2 bg-sky-50 hover:bg-sky-100 text-primary font-bold rounded-lg transition-colors">
                                     Detail Cabang
                                 </button>
+                                <a href="https://wa.me/{{ $setting->wa_brebes ?? '6281234567892' }}?text={{ $waTextBrebes }}" target="_blank" class="flex items-center justify-center w-10 h-10 shrink-0 bg-green-50 text-green-600 hover:bg-green-100 hover:text-green-700 rounded-lg transition-colors" title="Hubungi WA Admin Brebes">
+                                    <svg class="w-7 h-7" fill="currentColor" viewBox="0 0 24 24"><path d="M12.031 6.172c-3.181 0-5.767 2.586-5.768 5.766-.001 1.298.38 2.27 1.019 3.287l-.582 2.128 2.182-.573c.978.58 1.911.928 3.145.929 3.178 0 5.767-2.587 5.768-5.766.001-3.187-2.575-5.77-5.764-5.771zm3.392 8.244c-.144.405-.837.774-1.17.824-.299.045-.677.063-1.092-.069-.252-.08-.575-.187-.988-.365-1.739-.751-2.874-2.502-2.961-2.617-.087-.116-.708-.94-.708-1.793s.448-1.273.607-1.446c.159-.173.346-.217.462-.217l.332.006c.106.005.249-.04.39.298.144.347.491 1.2.534 1.287.043.087.072.188.014.304-.058.116-.087.188-.173.289l-.26.304c-.087.086-.177.18-.076.354.101.174.449.741.964 1.201.662.591 1.221.774 1.394.86s.274.072.376-.043c.101-.116.433-.506.549-.68.116-.173.231-.145.39-.087s1.011.477 1.184.564c.173.087.289.129.332.202.043.073.043.423-.101.827z"></path></svg>
+                                </a>
                             </div>
                         </div>
                     </div>

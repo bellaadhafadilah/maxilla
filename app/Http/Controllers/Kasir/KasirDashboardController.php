@@ -164,4 +164,22 @@ class KasirDashboardController extends Controller
         $transaksi = Transaksi::with(['reservasi.user', 'reservasi.rekamMedis.resepObats.obat'])->findOrFail($id_transaksi);
         return view('kasir.struk', compact('transaksi'));
     }
+
+    public function kirimStrukEmail($id_transaksi)
+    {
+        $transaksi = Transaksi::with(['reservasi.user', 'reservasi.rekamMedis.resepObats.obat'])->findOrFail($id_transaksi);
+        
+        $email = $transaksi->reservasi->user->email ?? null;
+
+        if (!$email) {
+            return response()->json(['success' => false, 'message' => 'Email pasien tidak ditemukan.']);
+        }
+
+        try {
+            \Illuminate\Support\Facades\Mail::to($email)->send(new \App\Mail\StrukPembayaranMail($transaksi));
+            return response()->json(['success' => true, 'message' => 'Struk berhasil dikirim ke ' . $email]);
+        } catch (\Exception $e) {
+            return response()->json(['success' => false, 'message' => 'Gagal mengirim email: ' . $e->getMessage()]);
+        }
+    }
 }

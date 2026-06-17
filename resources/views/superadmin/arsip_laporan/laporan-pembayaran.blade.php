@@ -17,6 +17,41 @@
 </div>
 
 <!-- ========================================== -->
+<!-- FILTER BAR -->
+<!-- ========================================== -->
+<div class="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden mb-8 p-5">
+    <form action="{{ route('superadmin.laporan-pembayaran') }}" method="GET" class="flex flex-col lg:flex-row lg:items-end w-full gap-4">
+        <div class="w-full lg:w-1/3">
+            <label class="block text-xs font-bold text-slate-500 mb-1.5">Cabang Klinik</label>
+            <select name="cabang" class="w-full bg-slate-50 border border-slate-200 text-slate-700 text-sm rounded-xl focus:ring-indigo-500 focus:border-indigo-500 block p-2.5 outline-none font-medium cursor-pointer">
+                <option value="semua" {{ $cabang === 'semua' || !$cabang ? 'selected' : '' }}>Semua Cabang</option>
+                @foreach($cabangList as $cb)
+                    <option value="{{ $cb }}" {{ $cabang === $cb ? 'selected' : '' }}>Cabang {{ $cb }}</option>
+                @endforeach
+            </select>
+        </div>
+        <div class="w-full lg:w-1/3">
+            <label class="block text-xs font-bold text-slate-500 mb-1.5">Dari Tanggal</label>
+            <input type="date" name="start_date" value="{{ old('start_date', $startDate ?? '') }}" class="w-full bg-slate-50 border border-slate-200 text-slate-700 text-sm rounded-xl focus:ring-indigo-500 focus:border-indigo-500 block p-2.5 outline-none font-medium">
+        </div>
+        <div class="w-full lg:w-1/3">
+            <label class="block text-xs font-bold text-slate-500 mb-1.5">Sampai Tanggal</label>
+            <input type="date" name="end_date" value="{{ old('end_date', $endDate ?? '') }}" class="w-full bg-slate-50 border border-slate-200 text-slate-700 text-sm rounded-xl focus:ring-indigo-500 focus:border-indigo-500 block p-2.5 outline-none font-medium">
+        </div>
+        <div class="flex gap-2">
+            <button type="submit" class="px-6 py-2.5 bg-indigo-600 text-white rounded-xl text-sm font-bold hover:bg-indigo-700 transition-all shadow-[0_4px_12px_rgba(79,70,229,0.25)] active:scale-95">
+                Filter
+            </button>
+            @if(($cabang && $cabang !== 'semua') || $startDate || $endDate)
+                <a href="{{ route('superadmin.laporan-pembayaran') }}" class="px-6 py-2.5 bg-slate-100 text-slate-700 rounded-xl text-sm font-bold hover:bg-slate-200 transition-all active:scale-95">
+                    Reset
+                </a>
+            @endif
+        </div>
+    </form>
+</div>
+
+<!-- ========================================== -->
 <!-- KPI STATS -->
 <!-- ========================================== -->
 <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
@@ -47,93 +82,150 @@
 </div>
 
 <!-- ========================================== -->
-<!-- FILTER BAR -->
+<!-- CHARTS DASHBOARD -->
 <!-- ========================================== -->
-<div class="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden mb-8 p-5">
-    <form action="{{ route('superadmin.laporan-pembayaran') }}" method="GET" class="flex flex-col lg:flex-row lg:items-end w-full gap-4">
-        <div class="w-full lg:w-1/4">
-            <label class="block text-xs font-bold text-slate-500 mb-1.5">Cabang Klinik</label>
-            <select name="cabang" class="w-full bg-slate-50 border border-slate-200 text-slate-700 text-sm rounded-xl focus:ring-indigo-500 focus:border-indigo-500 block p-2.5 outline-none font-medium cursor-pointer">
-                <option value="semua" {{ $cabang === 'semua' || !$cabang ? 'selected' : '' }}>Semua Cabang</option>
-                @foreach($cabangList as $cb)
-                    <option value="{{ $cb }}" {{ $cabang === $cb ? 'selected' : '' }}>Cabang {{ $cb }}</option>
-                @endforeach
-            </select>
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-8">
+    <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-5">
+        <h3 class="text-sm font-bold text-slate-700 mb-4 uppercase tracking-wider">Pendapatan Per Cabang</h3>
+        <div class="h-64">
+            <canvas id="cabangChart"></canvas>
         </div>
-        <div class="w-full lg:w-1/4">
-            <label class="block text-xs font-bold text-slate-500 mb-1.5">Cari Nama/ID</label>
-            <input type="search" name="search" value="{{ old('search', $search ?? '') }}" placeholder="Nama pasien atau ID reservasi..." class="w-full bg-slate-50 border border-slate-200 text-slate-700 text-sm rounded-xl focus:ring-indigo-500 focus:border-indigo-500 block p-2.5 outline-none font-medium">
+    </div>
+    
+    <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-5">
+        <h3 class="text-sm font-bold text-slate-700 mb-4 uppercase tracking-wider">Metode Pembayaran</h3>
+        <div class="h-64 flex justify-center">
+            <canvas id="metodeChart"></canvas>
         </div>
-        <div class="w-full lg:w-1/4">
-            <label class="block text-xs font-bold text-slate-500 mb-1.5">Dari Tanggal</label>
-            <input type="date" name="start_date" value="{{ old('start_date', $startDate ?? '') }}" class="w-full bg-slate-50 border border-slate-200 text-slate-700 text-sm rounded-xl focus:ring-indigo-500 focus:border-indigo-500 block p-2.5 outline-none font-medium">
+    </div>
+
+    <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-5 lg:col-span-2">
+        <h3 class="text-sm font-bold text-slate-700 mb-4 uppercase tracking-wider">Tren Pendapatan</h3>
+        <div class="h-72">
+            <canvas id="trenChart"></canvas>
         </div>
-        <div class="w-full lg:w-1/4">
-            <label class="block text-xs font-bold text-slate-500 mb-1.5">Sampai Tanggal</label>
-            <input type="date" name="end_date" value="{{ old('end_date', $endDate ?? '') }}" class="w-full bg-slate-50 border border-slate-200 text-slate-700 text-sm rounded-xl focus:ring-indigo-500 focus:border-indigo-500 block p-2.5 outline-none font-medium">
-        </div>
-        <div class="flex gap-2">
-            <button type="submit" class="px-6 py-2.5 bg-indigo-600 text-white rounded-xl text-sm font-bold hover:bg-indigo-700 transition-all shadow-[0_4px_12px_rgba(79,70,229,0.25)] active:scale-95">
-                Filter
-            </button>
-            @if(($cabang && $cabang !== 'semua') || $search || $startDate || $endDate)
-                <a href="{{ route('superadmin.laporan-pembayaran') }}" class="px-6 py-2.5 bg-slate-100 text-slate-700 rounded-xl text-sm font-bold hover:bg-slate-200 transition-all active:scale-95">
-                    Reset
-                </a>
-            @endif
-        </div>
-    </form>
+    </div>
 </div>
 
-<!-- ========================================== -->
-<!-- TABLE PEMBAYARAN -->
-<!-- ========================================== -->
-<div class="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
-    @if($pembayaran->count() > 0)
-        <div class="overflow-x-auto">
-            <table class="w-full text-sm">
-                <thead class="bg-slate-50 border-b border-slate-200">
-                    <tr>
-                        <th class="px-6 py-4 text-left font-bold text-slate-600 uppercase tracking-wider">ID Reservasi</th>
-                        <th class="px-6 py-4 text-left font-bold text-slate-600 uppercase tracking-wider">Nama Pasien</th>
-                        <th class="px-6 py-4 text-left font-bold text-slate-600 uppercase tracking-wider">Cabang</th>
-                        <th class="px-6 py-4 text-left font-bold text-slate-600 uppercase tracking-wider">Total Bayar</th>
-                        <th class="px-6 py-4 text-left font-bold text-slate-600 uppercase tracking-wider">Metode</th>
-                        <th class="px-6 py-4 text-left font-bold text-slate-600 uppercase tracking-wider">Tanggal</th>
-                    </tr>
-                </thead>
-                <tbody class="divide-y divide-slate-200">
-                    @foreach($pembayaran as $transaksi)
-                        <tr class="hover:bg-slate-50 transition-colors">
-                            <td class="px-6 py-4">
-                                <span class="font-bold text-slate-800">{{ $transaksi->reservasi->id_reservasi ?? '-' }}</span>
-                            </td>
-                            <td class="px-6 py-4">
-                                <p class="font-medium text-slate-800">{{ $transaksi->reservasi->nama_pasien ?? ($transaksi->reservasi->user->nama ?? 'Pasien') }}</p>
-                                <!-- <p class="text-xs text-slate-500">{{ $transaksi->reservasi->user->email ?? '-' }}</p> -->
-                            </td>
-                            <td class="px-6 py-4">
-                                <span class="px-3 py-1.5 bg-blue-50 text-blue-700 rounded-lg text-xs font-bold">{{ $transaksi->reservasi->cabang }}</span>
-                            </td>
-                            <td class="px-6 py-4">
-                                <span class="font-bold text-emerald-600">Rp {{ number_format($transaksi->total_bayar, 0, ',', '.') }}</span>
-                            </td>
-                            <td class="px-6 py-4">
-                                <span class="px-3 py-1.5 bg-slate-100 text-slate-700 rounded-lg text-xs font-bold capitalize">{{ $transaksi->metode_pembayaran ?? 'Cash' }}</span>
-                            </td>
-                            <td class="px-6 py-4">
-                                <span class="text-slate-600 font-medium">{{ $transaksi->created_at->format('d M Y H:i') }}</span>
-                            </td>
-                        </tr>
-                    @endforeach
-                </tbody>
-            </table>
-        </div>
-    @else
-        <div class="p-12 text-center">
-            <svg class="w-16 h-16 mx-auto text-slate-300 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-            <p class="text-slate-600 font-medium">Tidak ada data pembayaran untuk kriteria yang dipilih.</p>
-        </div>
-    @endif
-</div>
+
+
+<!-- Include Chart.js -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Data dari Controller
+        const dataCabang = @json($pendapatanPerCabang ?? []);
+        const dataTren = @json($trenPendapatan ?? []);
+        const dataMetode = @json($metodePembayaran ?? []);
+
+        const formatRupiah = (value) => {
+            return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(value);
+        };
+
+        // 1. Chart Cabang (Bar)
+        const ctxCabang = document.getElementById('cabangChart').getContext('2d');
+        new Chart(ctxCabang, {
+            type: 'bar',
+            data: {
+                labels: Object.keys(dataCabang),
+                datasets: [{
+                    label: 'Total Pendapatan',
+                    data: Object.values(dataCabang),
+                    backgroundColor: ['#4f46e5', '#06b6d4', '#10b981', '#f59e0b', '#ef4444'],
+                    borderRadius: 6
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                return formatRupiah(context.raw);
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            callback: function(value) {
+                                return 'Rp ' + (value / 1000) + 'k';
+                            }
+                        }
+                    }
+                }
+            }
+        });
+
+        // 2. Chart Metode Pembayaran (Doughnut)
+        const ctxMetode = document.getElementById('metodeChart').getContext('2d');
+        new Chart(ctxMetode, {
+            type: 'doughnut',
+            data: {
+                labels: Object.keys(dataMetode).map(k => k.charAt(0).toUpperCase() + k.slice(1)),
+                datasets: [{
+                    data: Object.values(dataMetode),
+                    backgroundColor: ['#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', '#ec4899'],
+                    borderWidth: 0,
+                    hoverOffset: 4
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { position: 'bottom' }
+                },
+                cutout: '70%'
+            }
+        });
+
+        // 3. Chart Tren (Line)
+        const ctxTren = document.getElementById('trenChart').getContext('2d');
+        new Chart(ctxTren, {
+            type: 'line',
+            data: {
+                labels: Object.keys(dataTren),
+                datasets: [{
+                    label: 'Pendapatan Harian',
+                    data: Object.values(dataTren),
+                    borderColor: '#4f46e5',
+                    backgroundColor: 'rgba(79, 70, 229, 0.1)',
+                    borderWidth: 2,
+                    fill: true,
+                    tension: 0.3,
+                    pointBackgroundColor: '#4f46e5'
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                return formatRupiah(context.raw);
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            callback: function(value) {
+                                return 'Rp ' + (value / 1000) + 'k';
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    });
+</script>
 @endsection

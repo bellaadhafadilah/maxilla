@@ -21,20 +21,7 @@ class LaporanPembayaranController extends Controller
         // Filter cabang
         if ($cabang && $cabang !== 'semua') {
             $query->whereHas('reservasi', function ($q) use ($cabang) {
-                $q->where('cabang', $cabang);
-            });
-        }
-
-        // Filter search (nama pasien atau ID reservasi)
-        if ($search) {
-            $query->whereHas('reservasi', function ($q) use ($search) {
-                $q->where(function ($sub) use ($search) {
-                    $sub->where('nama_pasien', 'like', "%{$search}%")
-                        ->orWhere('id_reservasi', 'like', "%{$search}%")
-                        ->orWhereHas('user', function ($userQuery) use ($search) {
-                            $userQuery->where('nama', 'like', "%{$search}%");
-                        });
-                });
+                $q->where('cabang', 'like', $cabang);
             });
         }
 
@@ -54,7 +41,41 @@ class LaporanPembayaranController extends Controller
         $rataRata = $totalTransaksi > 0 ? $totalNominal / $totalTransaksi : 0;
 
         // Get list cabang
-        $cabangList = Reservasi::select('cabang')->distinct()->pluck('cabang');
+        $cabangList = Reservasi::pluck('cabang')->filter()->map(function($c) { 
+            return ucfirst(strtolower($c)); 
+        })->unique()->sort()->values();
+
+        // Data for charts
+        $pendapatanPerCabang = [];
+        $trenPendapatan = [];
+        $metodePembayaran = [];
+
+        foreach ($pembayaran as $trx) {
+            $cbg = ucfirst(strtolower($trx->reservasi->cabang ?? 'Unknown'));
+            $date = \Carbon\Carbon::parse($trx->created_at)->format('Y-m-d');
+            $metode = $trx->metode_pembayaran ?? 'Unknown';
+
+            // Pendapatan per cabang
+            if (!isset($pendapatanPerCabang[$cbg])) {
+                $pendapatanPerCabang[$cbg] = 0;
+            }
+            $pendapatanPerCabang[$cbg] += $trx->total_bayar;
+
+            // Tren Pendapatan
+            if (!isset($trenPendapatan[$date])) {
+                $trenPendapatan[$date] = 0;
+            }
+            $trenPendapatan[$date] += $trx->total_bayar;
+
+            // Metode Pembayaran
+            if (!isset($metodePembayaran[$metode])) {
+                $metodePembayaran[$metode] = 0;
+            }
+            $metodePembayaran[$metode]++;
+        }
+
+        // Sort tren by date
+        ksort($trenPendapatan);
 
         return view('superadmin.arsip_laporan.laporan-pembayaran', compact(
             'pembayaran',
@@ -65,7 +86,10 @@ class LaporanPembayaranController extends Controller
             'cabang',
             'search',
             'startDate',
-            'endDate'
+            'endDate',
+            'pendapatanPerCabang',
+            'trenPendapatan',
+            'metodePembayaran'
         ));
     }
 }

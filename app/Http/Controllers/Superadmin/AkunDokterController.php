@@ -115,6 +115,20 @@ class AkunDokterController extends Controller
         $dokter = User::where('role', 'dokter')->findOrFail($id);
         $dokter->delete();
 
-        return redirect()->route('superadmin.dokter.index')->with('success', 'Akun dokter berhasil dihapus.');
+        return redirect()->route('superadmin.dokter.index')
+            ->with('success', 'Akun dokter berhasil dihapus');
+    }
+
+    public function toggleStatus($id)
+    {
+        $user = User::findOrFail($id);
+        if ($user->role !== 'dokter') {
+            abort(403);
+        }
+        $user->is_active = !$user->is_active;
+        $user->save();
+
+        $statusText = $user->is_active ? 'diaktifkan' : 'dinonaktifkan (diblokir)';
+        return redirect()->back()->with('success', "Akun dokter berhasil {$statusText}.");
     }
 }

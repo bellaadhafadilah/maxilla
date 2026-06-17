@@ -130,17 +130,28 @@
                     placeholder="Cari Kode Antrean atau Nama Pasien...">
             </div>
             <div class="flex items-center gap-3">
-                
-                <select
+                <form method="GET" action="{{ route('admin.booking.index') }}" class="flex items-center gap-2">
+                    <span class="text-xs font-bold text-slate-400">DARI</span>
+                    <input type="date" name="tanggal_awal" value="{{ $tanggal_awal }}" 
+                        onchange="this.form.submit()"
+                        class="bg-white border border-slate-200 text-slate-600 text-[13px] font-bold rounded-xl p-2.5 outline-none cursor-pointer hover:bg-slate-50 transition-all focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500">
+                    <span class="text-xs font-bold text-slate-400">SAMPAI</span>
+                    <input type="date" name="tanggal_akhir" value="{{ $tanggal_akhir }}" 
+                        onchange="this.form.submit()"
+                        class="bg-white border border-slate-200 text-slate-600 text-[13px] font-bold rounded-xl p-2.5 outline-none cursor-pointer hover:bg-slate-50 transition-all focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500">
+                </form>
+                <select id="statusFilter"
                     class="bg-white border border-slate-200 text-slate-600 text-[13px] font-bold rounded-xl p-3 outline-none cursor-pointer hover:bg-slate-50 transition-all border-r-8 border-transparent">
-                    <option>Semua Status</option>
-                    <option>Menunggu</option>
-                    <option>Hadir</option>
-                    <option>Menunggu Antrian</option>
-                    <option>Diperiksa</option>
-                    <option>Menunggu Obat</option>
-                    <option>Menunggu Pembayaran</option>
-                    <option>Selesai</option>
+                    <option value="">Semua Status</option>
+                    <option value="menunggu">Menunggu</option>
+                    <option value="hadir">Hadir</option>
+                    <option value="menunggu antrian">Menunggu Antrian</option>
+                    <option value="diperiksa">Diperiksa</option>
+                    <option value="menunggu obat">Menunggu Obat</option>
+                    <option value="menunggu pembayaran">Menunggu Pembayaran</option>
+                    <option value="selesai">Selesai</option>
+                    <option value="ditangguhkan">Ditangguhkan</option>
+                    <option value="kadaluarsa">Kadaluarsa</option>
                 </select>
             </div>
         </div>
@@ -161,7 +172,8 @@
                 <tbody class="divide-y divide-slate-50">
                     @forelse($bookings as $booking)
                         <tr class="hover:bg-slate-50/50 transition-all group" data-name="{{ strtolower($booking['pasien']) }}"
-                            data-kode="{{ strtolower($booking['no_antrian']) }}">
+                            data-kode="{{ strtolower($booking['no_antrian']) }}"
+                            data-status="{{ strtolower($booking['status']) }}">
                             <td class="px-8 py-6">
                                 <div class="flex flex-col">
                                     <span class="text-base font-black text-slate-800">{{ $booking['no_antrian'] }}</span>
@@ -236,6 +248,24 @@
                                             class="flex items-center gap-2 px-3 py-1 bg-amber-50 text-amber-600 rounded-full text-[11px] font-black uppercase border border-amber-100 leading-none">
                                             <span class="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse"></span>
                                             Menunggu Bayar
+                                        </span>
+                                    @elseif($status == 'kadaluarsa')
+                                        <span
+                                            class="flex items-center gap-2 px-3 py-1 bg-red-50 text-red-600 rounded-full text-[11px] font-black uppercase border border-red-100 leading-none">
+                                            <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12"></path></svg>
+                                            Kadaluarsa
+                                        </span>
+                                    @elseif($status == 'ditangguhkan')
+                                        <span
+                                            class="flex items-center gap-2 px-3 py-1 bg-slate-100 text-slate-600 rounded-full text-[11px] font-black uppercase border border-slate-200 leading-none">
+                                            <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M10 9v6m4-6v6m7-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                                            Ditangguhkan
+                                        </span>
+                                    @elseif(in_array(strtolower($status), ['batal', 'dibatalkan']))
+                                        <span
+                                            class="flex items-center gap-2 px-3 py-1 bg-red-50 text-red-600 rounded-full text-[11px] font-black uppercase border border-red-100 leading-none">
+                                            <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12"></path></svg>
+                                            Batal
                                         </span>
                                     @else
                                         <span
@@ -328,12 +358,107 @@
                                                 </div>
                                             </template>
                                         </form>
+
+                                        <form id="form-lewati-{{ $booking['id'] }}" method="POST" action="{{ route('admin.booking.lewati-poli', $booking['id']) }}" x-data="{ showConfirmLewati: false }">
+                                            @csrf
+                                            <button type="button" @click="showConfirmLewati = true" class="px-3 py-2 bg-slate-100 text-slate-600 rounded-xl text-xs font-black hover:bg-slate-200 transition-all border border-slate-200 ml-2">
+                                                Lewati
+                                            </button>
+
+                                            <!-- Modal Konfirmasi Lewati Alpine -->
+                                            <template x-teleport="body">
+                                                <div x-show="showConfirmLewati"
+                                                    class="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/40 backdrop-blur-sm"
+                                                    style="display: none;" x-transition.opacity>
+                                                    <div @click.away="showConfirmLewati = false" x-show="showConfirmLewati"
+                                                        x-transition:enter="transition ease-out duration-300"
+                                                        x-transition:enter-start="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
+                                                        x-transition:enter-end="opacity-100 translate-y-0 sm:scale-100"
+                                                        x-transition:leave="transition ease-in duration-200"
+                                                        x-transition:leave-start="opacity-100 translate-y-0 sm:scale-100"
+                                                        x-transition:leave-end="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
+                                                        class="bg-white rounded-3xl shadow-2xl w-full max-w-sm p-6 relative mx-4">
+
+                                                        <div
+                                                            class="absolute -top-10 left-1/2 -translate-x-1/2 w-20 h-20 bg-amber-50 text-amber-500 rounded-full flex items-center justify-center border-4 border-white shadow-sm">
+                                                            <svg class="w-10 h-10" fill="none" stroke="currentColor"
+                                                                viewBox="0 0 24 24">
+                                                                <path stroke-linecap="round" stroke-linejoin="round"
+                                                                    stroke-width="2"
+                                                                    d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z">
+                                                                </path>
+                                                            </svg>
+                                                        </div>
+
+                                                        <div class="mt-8 text-center">
+                                                            <h3 class="text-xl font-bold text-slate-800 mb-2 tracking-tight">Lewati Pasien?</h3>
+                                                            <p class="text-sm text-slate-500 mb-8 leading-relaxed">Anda yakin ingin menangguhkan (melewati) pasien <strong
+                                                                    class="text-slate-800 font-bold">{{ $booking['pasien'] }}</strong>?</p>
+
+                                                            <div class="flex gap-3">
+                                                                <button type="button" @click="showConfirmLewati = false"
+                                                                    class="flex-1 py-3 px-4 bg-slate-100 text-slate-600 rounded-xl font-bold text-sm hover:bg-slate-200 transition-colors">Batal</button>
+                                                                <button type="submit" form="form-lewati-{{ $booking['id'] }}"
+                                                                    class="flex-1 py-3 px-4 bg-amber-500 text-white rounded-xl font-bold text-sm hover:bg-amber-600 transition-colors shadow-lg shadow-amber-200">Ya, Lewati</button>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </template>
+                                        </form>
                                     @elseif($status == 'diperiksa' || $status == 'menunggu antrian')
                                         {{-- Sudah dipanggil, sedang diperiksa dokter --}}
                                         <span
                                             class="px-4 py-2 bg-blue-50 text-blue-500 rounded-xl text-xs font-black border border-blue-100">
                                             Sudah Dipanggil
                                         </span>
+                                        <form id="form-lewati-{{ $booking['id'] }}" method="POST" action="{{ route('admin.booking.lewati-poli', $booking['id']) }}" x-data="{ showConfirmLewati: false }">
+                                            @csrf
+                                            <button type="button" @click="showConfirmLewati = true" class="px-3 py-2 bg-slate-100 text-slate-600 rounded-xl text-xs font-black hover:bg-slate-200 transition-all border border-slate-200 ml-2">
+                                                Lewati
+                                            </button>
+
+                                            <!-- Modal Konfirmasi Lewati Alpine -->
+                                            <template x-teleport="body">
+                                                <div x-show="showConfirmLewati"
+                                                    class="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/40 backdrop-blur-sm"
+                                                    style="display: none;" x-transition.opacity>
+                                                    <div @click.away="showConfirmLewati = false" x-show="showConfirmLewati"
+                                                        x-transition:enter="transition ease-out duration-300"
+                                                        x-transition:enter-start="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
+                                                        x-transition:enter-end="opacity-100 translate-y-0 sm:scale-100"
+                                                        x-transition:leave="transition ease-in duration-200"
+                                                        x-transition:leave-start="opacity-100 translate-y-0 sm:scale-100"
+                                                        x-transition:leave-end="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
+                                                        class="bg-white rounded-3xl shadow-2xl w-full max-w-sm p-6 relative mx-4">
+
+                                                        <div
+                                                            class="absolute -top-10 left-1/2 -translate-x-1/2 w-20 h-20 bg-amber-50 text-amber-500 rounded-full flex items-center justify-center border-4 border-white shadow-sm">
+                                                            <svg class="w-10 h-10" fill="none" stroke="currentColor"
+                                                                viewBox="0 0 24 24">
+                                                                <path stroke-linecap="round" stroke-linejoin="round"
+                                                                    stroke-width="2"
+                                                                    d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z">
+                                                                </path>
+                                                            </svg>
+                                                        </div>
+
+                                                        <div class="mt-8 text-center">
+                                                            <h3 class="text-xl font-bold text-slate-800 mb-2 tracking-tight">Lewati Pasien?</h3>
+                                                            <p class="text-sm text-slate-500 mb-8 leading-relaxed">Anda yakin ingin menangguhkan (melewati) pasien <strong
+                                                                    class="text-slate-800 font-bold">{{ $booking['pasien'] }}</strong>?</p>
+
+                                                            <div class="flex gap-3">
+                                                                <button type="button" @click="showConfirmLewati = false"
+                                                                    class="flex-1 py-3 px-4 bg-slate-100 text-slate-600 rounded-xl font-bold text-sm hover:bg-slate-200 transition-colors">Batal</button>
+                                                                <button type="submit" form="form-lewati-{{ $booking['id'] }}"
+                                                                    class="flex-1 py-3 px-4 bg-amber-500 text-white rounded-xl font-bold text-sm hover:bg-amber-600 transition-colors shadow-lg shadow-amber-200">Ya, Lewati</button>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </template>
+                                        </form>
                                     @elseif($status == 'menunggu obat')
                                         <span
                                             class="px-4 py-2 bg-purple-50 text-purple-500 rounded-xl text-xs font-black border border-purple-100">
@@ -343,6 +468,59 @@
                                         <span
                                             class="px-4 py-2 bg-amber-50 text-amber-500 rounded-xl text-xs font-black border border-amber-100">
                                             Di Kasir
+                                        </span>
+                                    @elseif($status == 'kadaluarsa')
+                                        <span
+                                            class="px-4 py-2 bg-red-50 text-red-500 rounded-xl text-xs font-black border border-red-100">
+                                            Expired
+                                        </span>
+                                    @elseif($status == 'ditangguhkan')
+                                        <form id="form-kembalikan-{{ $booking['id'] }}" method="POST" action="{{ route('admin.booking.kembalikan-antrian', $booking['id']) }}" x-data="{ showConfirmKembalikan: false }">
+                                            @csrf
+                                            <button type="button" @click="showConfirmKembalikan = true" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-black shadow-lg shadow-emerald-100 hover:shadow-emerald-200 transition-all active:scale-95 border border-emerald-500">
+                                                Kembalikan Antrean
+                                            </button>
+
+                                            <!-- Modal Konfirmasi Kembalikan Alpine -->
+                                            <template x-teleport="body">
+                                                <div x-show="showConfirmKembalikan"
+                                                    class="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/40 backdrop-blur-sm"
+                                                    style="display: none;" x-transition.opacity>
+                                                    <div @click.away="showConfirmKembalikan = false" x-show="showConfirmKembalikan"
+                                                        x-transition:enter="transition ease-out duration-300"
+                                                        x-transition:enter-start="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
+                                                        x-transition:enter-end="opacity-100 translate-y-0 sm:scale-100"
+                                                        x-transition:leave="transition ease-in duration-200"
+                                                        x-transition:leave-start="opacity-100 translate-y-0 sm:scale-100"
+                                                        x-transition:leave-end="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
+                                                        class="bg-white rounded-3xl shadow-2xl w-full max-w-sm p-6 relative mx-4">
+
+                                                        <div
+                                                            class="absolute -top-10 left-1/2 -translate-x-1/2 w-20 h-20 bg-emerald-50 text-emerald-500 rounded-full flex items-center justify-center border-4 border-white shadow-sm">
+                                                            <svg class="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+                                                            </svg>
+                                                        </div>
+
+                                                        <div class="mt-8 text-center">
+                                                            <h3 class="text-xl font-bold text-slate-800 mb-2 tracking-tight">Kembalikan Antrean?</h3>
+                                                            <p class="text-sm text-slate-500 mb-8 leading-relaxed">Anda yakin ingin mengembalikan antrean pasien <strong
+                                                                    class="text-slate-800 font-bold">{{ $booking['pasien'] }}</strong>?</p>
+
+                                                            <div class="flex gap-3">
+                                                                <button type="button" @click="showConfirmKembalikan = false"
+                                                                    class="flex-1 py-3 px-4 bg-slate-100 text-slate-600 rounded-xl font-bold text-sm hover:bg-slate-200 transition-colors">Batal</button>
+                                                                <button type="submit" form="form-kembalikan-{{ $booking['id'] }}"
+                                                                    class="flex-1 py-3 px-4 bg-emerald-600 text-white rounded-xl font-bold text-sm hover:bg-emerald-700 transition-colors shadow-lg shadow-emerald-200">Ya, Kembalikan</button>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </template>
+                                        </form>
+                                    @elseif(in_array(strtolower($status), ['batal', 'dibatalkan']))
+                                        <span class="px-4 py-2 bg-red-50 text-red-500 rounded-xl text-xs font-black border border-red-100">
+                                            Dibatalkan
                                         </span>
                                     @else
                                         <span class="px-4 py-2 bg-emerald-50 text-emerald-500 rounded-xl text-xs font-black">✓
@@ -371,14 +549,23 @@
     </div>
 
     <script>
-        // Simple live search
-        document.getElementById('searchInput').addEventListener('input', function () {
-            const q = this.value.toLowerCase();
+        function filterTable() {
+            const q = document.getElementById('searchInput').value.toLowerCase();
+            const status = document.getElementById('statusFilter').value.toLowerCase();
+            
             document.querySelectorAll('tbody tr[data-name]').forEach(row => {
                 const name = row.dataset.name || '';
                 const kode = row.dataset.kode || '';
-                row.style.display = (name.includes(q) || kode.includes(q)) ? '' : 'none';
+                const rowStatus = row.dataset.status || '';
+                
+                const matchSearch = q === '' || name.includes(q) || kode.includes(q);
+                const matchStatus = status === '' || rowStatus === status;
+                
+                row.style.display = (matchSearch && matchStatus) ? '' : 'none';
             });
-        });
+        }
+
+        document.getElementById('searchInput').addEventListener('input', filterTable);
+        document.getElementById('statusFilter').addEventListener('change', filterTable);
     </script>
 @endsection

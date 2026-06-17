@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Riwayat Kunjungan | Maxilla Dental Care</title>
+    <title>Riwayat Reservasi | Maxilla Dental Care</title>
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Alpine.js -->
@@ -25,90 +25,117 @@
 
     <!-- TOP NAVIGATION BAR (ORIGINAL) -->
     <header class="bg-white border-b border-slate-200 sticky top-0 z-50 shadow-sm">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex justify-between items-center h-20">
-            <div class="flex items-center gap-3">
-                <img src="{{ asset('image/logo-maxilla.png') }}" alt="Logo" class="h-8 w-auto">
-                <span class="font-heading font-bold text-xl tracking-tight text-secondary">Maxilla <span
-                        class="text-primary hidden sm:inline">Dental Care</span></span>
-            </div>
-            <nav class="hidden md:flex items-center gap-8">
-                <a href="/pasien/dashboard"
-                    class="text-sm font-medium text-slate-500 hover:text-slate-800 transition-colors py-7">Beranda</a>
-                <a href="/pasien/riwayat" class="text-sm font-bold text-primary border-b-2 border-primary py-7">Riwayat
-                    Kunjungan</a>
-                <a href="/pasien/bantuan"
-                    class="text-sm font-medium text-slate-500 hover:text-slate-800 transition-colors py-7">Bantuan</a>
-            </nav>
-            <div class="flex items-center gap-4">
-                <a href="/pasien/buat-janji"
-                    class="hidden md:inline-flex items-center px-4 py-2 rounded-xl text-sm font-bold text-white bg-primary hover:bg-blue-600 transition-colors shadow-[0_4px_10px_rgb(14,165,233,0.3)]">Buat
-                    Reservasi</a>
-                @include('components.notification-bell')
-                <div class="relative" x-data="{ userMenuOpen: false }">
-                    <button @click="userMenuOpen = !userMenuOpen" @click.away="userMenuOpen = false"
-                        class="flex items-center gap-2 hover:opacity-80">
-                        <div class="hidden sm:block text-right">
-                            <p class="text-sm font-bold text-slate-800">{{ auth()->user()->nama ?? 'Pasien' }}</p>
-                        </div>
-                        @if(auth()->user()->foto)
-                            <img src="{{ asset('storage/' . auth()->user()->foto) }}" alt="Profil"
-                                class="w-10 h-10 rounded-full object-cover border border-blue-200 shadow-sm">
-                        @else
-                            <div
-                                class="w-10 h-10 rounded-full bg-blue-100 border border-blue-200 flex items-center justify-center text-primary font-heading font-bold overflow-hidden shadow-sm">
-                                {{ substr(auth()->user()->nama ?? 'P', 0, 1) }}
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-20">
+                <!-- Logo & Brand -->
+                <div class="flex items-center gap-3">
+                    <img src="{{ asset('image/logo-maxilla.png') }}" alt="Logo" class="h-8 w-auto">
+                    <span class="font-heading font-bold text-xl tracking-tight text-secondary">Maxilla <span
+                            class="text-primary hidden sm:inline">Dental Care</span></span>
+                </div>
+
+                <!-- Desktop Menu -->
+                <nav class="hidden md:flex items-center gap-8">
+                    <a href="/pasien/dashboard"
+                        class="text-sm font-medium text-slate-500 hover:text-slate-800 transition-colors py-7">Beranda</a>
+                    <a href="/pasien/riwayat"
+                        class="text-sm font-bold text-primary border-b-2 border-primary py-7">Riwayat
+                        Reservasi</a>
+                    <a href="/pasien/bantuan"
+                        class="text-sm font-medium text-slate-500 hover:text-slate-800 transition-colors py-7">Bantuan</a>
+                </nav>
+
+                <!-- Profile Dropdown & Mobile Menu Button -->
+                <div class="flex items-center gap-4">
+                    <a href="/pasien/buat-janji"
+                        class="hidden md:inline-flex items-center justify-center px-4 py-2 rounded-xl text-sm font-bold text-white bg-primary hover:bg-blue-600 transition-colors shadow-[0_4px_10px_rgb(14,165,233,0.3)]">
+                        Buat Reservasi
+                    </a>
+
+                    @include('components.notification-bell')
+
+                    <!-- Profile Dropdown (Alpine) -->
+                    <div class="relative" x-data="{ userMenuOpen: false }">
+                        <button @click="userMenuOpen = !userMenuOpen" @click.away="userMenuOpen = false"
+                            class="flex items-center gap-2 lg:gap-3 hover:opacity-80 transition-opacity focus:outline-none">
+                            <div class="hidden sm:block text-right">
+                                <p class="text-sm font-bold text-slate-800">{{ auth()->user()->nama ?? 'Pasien' }}</p>
+                                <p class="text-[11px] text-slate-500 font-medium">Pasien Terdaftar</p>
                             </div>
-                        @endif
-                    </button>
-                    <!-- Dropdown -->
-                    <div x-show="userMenuOpen"
-                        class="absolute right-0 mt-3 w-48 bg-white rounded-xl shadow-lg py-2 border border-slate-100 z-50"
-                        style="display: none;">
-                        <form action="{{ route('logout') }}" method="POST" x-data="{ showLogoutConfirm: false }" x-ref="logoutForm">
-                            @csrf
-                            <button type="button" @click="showLogoutConfirm = true"
-                                class="w-full text-left px-4 py-2 text-sm font-bold text-red-500 hover:bg-red-50">Keluar
-                                Aplikasi</button>
-                        
-<!-- Modal Konfirmasi Logout -->
-<template x-teleport="body">
-    <div x-show="showLogoutConfirm" x-transition:enter="transition ease-out duration-300"
-        x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100"
-        x-transition:leave="transition ease-in duration-200"
-        x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0"
-        class="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm"
-        style="display: none;">
+                            @if(auth()->user()->foto)
+                                <img src="{{ asset('storage/' . auth()->user()->foto) }}" alt="Profil"
+                                    class="w-10 h-10 rounded-full object-cover border border-blue-200 shadow-sm">
+                            @else
+                                <div
+                                    class="w-10 h-10 rounded-full bg-blue-100 border border-blue-200 flex items-center justify-center text-primary font-heading font-bold overflow-hidden shadow-sm">
+                                    {{ substr(auth()->user()->nama ?? 'P', 0, 1) }}
+                                </div>
+                            @endif
+                            <svg class="hidden sm:block w-4 h-4 text-slate-400" fill="none" stroke="currentColor"
+                                viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M19 9l-7 7-7-7"></path>
+                            </svg>
+                        </button>
 
-        <div @click.away="showLogoutConfirm = false" x-show="showLogoutConfirm"
-            x-transition:enter="transition ease-out duration-300"
-            x-transition:enter-start="opacity-0 scale-95 translate-y-4"
-            x-transition:enter-end="opacity-100 scale-100 translate-y-0"
-            x-transition:leave="transition ease-in duration-200"
-            x-transition:leave-start="opacity-100 scale-100 translate-y-0"
-            x-transition:leave-end="opacity-0 scale-95 translate-y-4"
-            class="bg-white rounded-3xl p-8 max-w-sm w-full shadow-2xl border border-slate-100 text-center relative overflow-hidden">
+                        <!-- Dropdown Menu -->
+                        <div x-show="userMenuOpen" x-transition.origin.top.right
+                            class="absolute right-0 mt-3 w-48 bg-white rounded-xl shadow-lg border border-slate-100 py-2 z-50"
+                            style="display: none;">
+                            <div class="px-4 py-2 border-b border-slate-100 sm:hidden">
+                                <p class="text-sm font-bold text-slate-800">{{ auth()->user()->nama ?? 'Pasien' }}</p>
+                                <p class="text-xs text-primary font-medium">Pasien Terdaftar</p>
+                            </div>
+                            <a href="/pasien/profil/lengkapi"
+                                class="block px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-50 hover:text-primary transition-colors">Profil
+                                Saya</a>
+                            <div class="border-t border-slate-100 my-1"></div>
+                            <form action="{{ route('logout') }}" method="POST" x-data="{ showLogoutConfirm: false }" x-ref="logoutForm">
+                                @csrf
+                                <button type="button" @click="showLogoutConfirm = true"
+                                    class="w-full text-left block px-4 py-2 text-sm font-bold text-red-500 hover:bg-red-50 transition-colors">
+                                    Keluar Aplikasi
+                                </button>
+                                <!-- Modal Konfirmasi Logout -->
+                                <template x-teleport="body">
+                                    <div x-show="showLogoutConfirm" x-transition:enter="transition ease-out duration-300"
+                                        x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100"
+                                        x-transition:leave="transition ease-in duration-200"
+                                        x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0"
+                                        class="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm"
+                                        style="display: none;">
 
-            <div class="w-20 h-20 bg-red-50 text-red-500 rounded-full flex items-center justify-center mx-auto mb-6">
-                <svg class="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path>
-                </svg>
-            </div>
+                                        <div @click.away="showLogoutConfirm = false" x-show="showLogoutConfirm"
+                                            x-transition:enter="transition ease-out duration-300"
+                                            x-transition:enter-start="opacity-0 scale-95 translate-y-4"
+                                            x-transition:enter-end="opacity-100 scale-100 translate-y-0"
+                                            x-transition:leave="transition ease-in duration-200"
+                                            x-transition:leave-start="opacity-100 scale-100 translate-y-0"
+                                            x-transition:leave-end="opacity-0 scale-95 translate-y-4"
+                                            class="bg-white rounded-3xl p-8 max-w-sm w-full shadow-2xl border border-slate-100 text-center relative overflow-hidden">
 
-            <h3 class="font-bold text-xl text-slate-800 mb-3">Konfirmasi Logout</h3>
-            <p class="text-slate-500 text-sm mb-8 leading-relaxed">Apakah Anda yakin ingin keluar dari aplikasi?</p>
+                                            <div class="w-20 h-20 bg-red-50 text-red-500 rounded-full flex items-center justify-center mx-auto mb-6">
+                                                <svg class="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path>
+                                                </svg>
+                                            </div>
 
-            <div class="grid grid-cols-2 gap-4">
-                <button @click="showLogoutConfirm = false" type="button" class="px-6 py-3 rounded-2xl text-sm font-bold text-slate-500 bg-slate-100 hover:bg-slate-200 transition-colors">
-                    Batal
-                </button>
-                <button type="button" @click="$refs.logoutForm.submit()" class="px-6 py-3 rounded-2xl text-sm font-bold text-white bg-red-500 hover:bg-red-600 transition-all shadow-lg shadow-red-100">
-                    Ya, Keluar
-                </button>
-            </div>
-        </div>
-    </div>
-</template>
-</form>
+                                            <h3 class="font-bold text-xl text-slate-800 mb-3">Konfirmasi Logout</h3>
+                                            <p class="text-slate-500 text-sm mb-8 leading-relaxed">Apakah Anda yakin ingin keluar dari aplikasi?</p>
+
+                                            <div class="grid grid-cols-2 gap-4">
+                                                <button @click="showLogoutConfirm = false" type="button" class="px-6 py-3 rounded-2xl text-sm font-bold text-slate-500 bg-slate-100 hover:bg-slate-200 transition-colors">
+                                                    Batal
+                                                </button>
+                                                <button type="button" @click="$refs.logoutForm.submit()" class="px-6 py-3 rounded-2xl text-sm font-bold text-white bg-red-500 hover:bg-red-600 transition-all shadow-lg shadow-red-100">
+                                                    Ya, Keluar
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </template>
+                            </form>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -118,7 +145,7 @@
     <!-- CONTENT (REFINED & COMPACT) -->
     <main class="flex-1 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-12">
         <!-- <div class="mb-10">
-            <h1 class="font-heading text-3xl font-bold text-secondary mb-1">Riwayat Kunjungan</h1>
+            <h1 class="font-heading text-3xl font-bold text-secondary mb-1">Riwayat Reservasi</h1>
             <p class="text-slate-500">Catatan historis perawatan medis Anda di Maxilla Dental Care.</p>
         </div> -->
 
@@ -213,7 +240,7 @@
                 </div>
             @empty
                 <div class="py-12 text-center">
-                    <p class="text-slate-400 text-sm">Belum ada riwayat kunjungan.</p>
+                    <p class="text-slate-400 text-sm">Belum ada riwayat reservasi.</p>
                 </div>
             @endforelse
         </div>

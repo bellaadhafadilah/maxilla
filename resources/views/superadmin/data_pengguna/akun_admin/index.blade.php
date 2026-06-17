@@ -178,6 +178,19 @@
                                                 </path>
                                             </svg>
                                         </a>
+                                        <button type="button" onclick="openToggleStatusModal('{{ route('superadmin.admin.toggle-status', $admin->id_user) }}', '{{ $admin->nama }}', {{ $admin->is_active ? 'true' : 'false' }})"
+                                            class="p-1.5 {{ $admin->is_active ? 'text-amber-500 hover:bg-amber-50 hover:border-amber-100' : 'text-emerald-500 hover:bg-emerald-50 hover:border-emerald-100' }} rounded-lg transition-colors border border-transparent"
+                                            title="{{ $admin->is_active ? 'Blokir Akun' : 'Aktifkan Akun' }}">
+                                            @if($admin->is_active)
+                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636"></path>
+                                            </svg>
+                                            @else
+                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                            </svg>
+                                            @endif
+                                        </button>
                                         <button type="button"
                                             onclick="openDeleteModal('{{ route('superadmin.admin.destroy', $admin->id_user) }}', '{{ $admin->nama }}')"
                                             class="p-1.5 text-red-500 hover:bg-red-50 rounded-lg transition-colors border border-transparent hover:border-red-100"
@@ -263,6 +276,48 @@
     </div>
 </div>
 
+</div>
+
+<!-- MODAL KONFIRMASI STATUS -->
+<div id="toggleStatusModal" class="fixed inset-0 z-[999] hidden">
+    <div class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm transition-opacity"></div>
+    <div class="fixed inset-0 overflow-y-auto">
+        <div class="flex min-h-full items-center justify-center p-4 text-center sm:p-0">
+            <div
+                class="relative transform overflow-hidden rounded-2xl bg-white text-left shadow-2xl transition-all sm:my-8 sm:w-full sm:max-w-md border border-slate-200">
+                <div class="bg-white p-6 pt-8">
+                    <div class="mx-auto flex h-16 w-16 items-center justify-center rounded-full mb-4" id="toggleModalIconBg">
+                        <svg class="h-8 w-8" id="toggleModalIcon" fill="none" stroke="currentColor" viewBox="0 0 24 24"></svg>
+                    </div>
+                    <div class="text-center">
+                        <h3 class="text-xl font-black text-slate-800" id="toggleModalTitle">Ubah Status Akun?</h3>
+                        <div class="mt-3">
+                            <p class="text-sm text-slate-500 leading-relaxed">
+                                <span id="toggleModalDesc"></span> akun <span id="toggleAdminNameDisplay" class="font-bold text-slate-800"></span>?
+                            </p>
+                        </div>
+                    </div>
+                </div>
+                <div
+                    class="bg-slate-50 px-6 py-4 flex flex-col-reverse sm:flex-row justify-end gap-3 border-t border-slate-100">
+                    <button type="button" onclick="closeToggleStatusModal()"
+                        class="w-full sm:w-auto px-6 py-2.5 rounded-xl text-sm font-bold text-slate-600 hover:bg-slate-200 transition-all border border-slate-200 bg-white">
+                        Batal
+                    </button>
+                    <form id="toggleStatusForm" method="POST" class="w-full sm:w-auto">
+                        @csrf
+                        @method('PATCH')
+                        <button type="submit" id="toggleSubmitBtn"
+                            class="w-full px-6 py-2.5 text-white rounded-xl text-sm font-bold transition-all shadow-lg active:scale-95">
+                            Ya, Lanjutkan
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
 <script>
     function openDeleteModal(actionUrl, adminName) {
         const modal = document.getElementById('deleteModal');
@@ -282,10 +337,50 @@
         document.body.style.overflow = 'auto'; // Restore scrolling
     }
 
+    function openToggleStatusModal(actionUrl, adminName, isActive) {
+        const modal = document.getElementById('toggleStatusModal');
+        const form = document.getElementById('toggleStatusForm');
+        const nameDisplay = document.getElementById('toggleAdminNameDisplay');
+        const title = document.getElementById('toggleModalTitle');
+        const desc = document.getElementById('toggleModalDesc');
+        const iconBg = document.getElementById('toggleModalIconBg');
+        const icon = document.getElementById('toggleModalIcon');
+        const btn = document.getElementById('toggleSubmitBtn');
+
+        form.action = actionUrl;
+        nameDisplay.textContent = adminName;
+
+        if (isActive) {
+            title.textContent = 'Blokir Akun Admin?';
+            desc.textContent = 'Anda yakin ingin memblokir';
+            iconBg.className = 'mx-auto flex h-16 w-16 items-center justify-center rounded-full mb-4 bg-amber-50 text-amber-500';
+            icon.innerHTML = '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636"></path>';
+            btn.className = 'w-full px-6 py-2.5 text-white rounded-xl text-sm font-bold transition-all shadow-lg active:scale-95 bg-amber-500 hover:bg-amber-600 hover:shadow-amber-200';
+            btn.textContent = 'Ya, Blokir Akun';
+        } else {
+            title.textContent = 'Aktifkan Akun Admin?';
+            desc.textContent = 'Anda yakin ingin mengaktifkan kembali';
+            iconBg.className = 'mx-auto flex h-16 w-16 items-center justify-center rounded-full mb-4 bg-emerald-50 text-emerald-500';
+            icon.innerHTML = '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>';
+            btn.className = 'w-full px-6 py-2.5 text-white rounded-xl text-sm font-bold transition-all shadow-lg active:scale-95 bg-emerald-500 hover:bg-emerald-600 hover:shadow-emerald-200';
+            btn.textContent = 'Ya, Aktifkan Akun';
+        }
+
+        modal.classList.remove('hidden');
+        document.body.style.overflow = 'hidden';
+    }
+
+    function closeToggleStatusModal() {
+        const modal = document.getElementById('toggleStatusModal');
+        modal.classList.add('hidden');
+        document.body.style.overflow = 'auto';
+    }
+
     // Close on escape key
     window.addEventListener('keydown', function (event) {
         if (event.key === 'Escape') {
             closeDeleteModal();
+            closeToggleStatusModal();
         }
     });
 </script>

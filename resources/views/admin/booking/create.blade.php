@@ -242,7 +242,7 @@
                         :disabled="!tanggal || !jam || loading">
                         <option value="">Pilih Dokter</option>
                         <template x-for="d in dokters">
-                            <option :value="d.dokter_nama" x-text="d.dokter_nama + ' - ' + d.poli"></option>
+                            <option :value="d.dokter_nama" x-text="d.dokter_nama"></option>
                         </template>
                     </select>
                 </div>

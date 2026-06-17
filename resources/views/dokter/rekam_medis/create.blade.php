@@ -231,7 +231,7 @@
 
     <!-- Form Rekam Medis & Resep -->
     <div class="lg:col-span-2">
-        <form action="{{ route('dokter.rekam-medis.store', $reservasi->id_reservasi) }}" method="POST" class="bg-white rounded-2xl border border-slate-200 shadow-sm p-6">
+        <form id="form-rekam-medis" action="{{ route('dokter.rekam-medis.store', $reservasi->id_reservasi) }}" method="POST" class="bg-white rounded-2xl border border-slate-200 shadow-sm p-6">
             @csrf
             
             @if(session('error'))
@@ -429,14 +429,14 @@
             </div>
 
         <div x-data="{
-            rows: [{ id: Date.now(), obat_id: '', obat_name: '-- Tanpa Obat / Pilih Obat --', jumlah: 1, aturan: '' }],
+            rows: [{ id: Date.now(), obat_id: '', obat_name: '-- Tanpa Obat / Pilih Obat --', jumlah: 1, aturan: '', maxStok: 0 }],
             obats: [
                 @foreach($obats as $obat)
-                    { id: '{{ $obat->id_obat }}', name: '{{ addslashes($obat->nama_obat) }} (Stok: {{ $obat->stok }})' },
+                    { id: '{{ $obat->id_obat }}', name: '{{ addslashes($obat->nama_obat) }} (Stok: {{ $obat->stok }})', stok: {{ $obat->stok }} },
                 @endforeach
             ],
             addRow() {
-                this.rows.push({ id: Date.now(), obat_id: '', obat_name: '-- Tanpa Obat / Pilih Obat --', jumlah: 1, aturan: '' });
+                this.rows.push({ id: Date.now(), obat_id: '', obat_name: '-- Tanpa Obat / Pilih Obat --', jumlah: 1, aturan: '', maxStok: 0 });
             },
             removeRow(id) {
                 if (this.rows.length > 1) {
@@ -444,6 +444,30 @@
                 } else {
                     alert('Minimal satu baris obat (bisa dibiarkan kosong jika tidak meresepkan).');
                 }
+            },
+            get isSubmitDisabled() {
+                return this.rows.some(r => r.obat_id !== '' && parseInt(r.jumlah || 0) > r.maxStok);
+            },
+            submitForm() {
+                if (this.isSubmitDisabled) return;
+                
+                const form = document.getElementById('form-rekam-medis');
+                if (!form.reportValidity()) return;
+
+                Swal.fire({
+                    title: 'Konfirmasi Rekam Medis',
+                    text: 'Apakah data rekam medis dan resep obat sudah benar?',
+                    icon: 'question',
+                    showCancelButton: true,
+                    confirmButtonColor: '#2563eb',
+                    cancelButtonColor: '#94a3b8',
+                    confirmButtonText: 'Ya, Simpan',
+                    cancelButtonText: 'Cek Kembali'
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        form.submit();
+                    }
+                });
             }
         }">
             <div class="flex items-center justify-between mb-4 border-b border-slate-100 pb-3">
@@ -474,9 +498,11 @@
                                 if (!opt) {
                                     row.obat_id = '';
                                     row.obat_name = '-- Tanpa Obat / Pilih Obat --';
+                                    row.maxStok = 0;
                                 } else {
                                     row.obat_id = opt.id;
                                     row.obat_name = opt.name;
+                                    row.maxStok = opt.stok;
                                 }
                                 this.open = false;
                                 this.search = '';
@@ -486,33 +512,53 @@
                             <input type="hidden" name="id_obat[]" :value="row.obat_id">
                             
                             <div class="relative">
-                                <button type="button" @click="open = !open" @click.away="open = false" class="w-full text-left rounded-xl border-slate-200 bg-white shadow-sm text-sm p-3 focus:border-emerald-500 focus:ring-emerald-500 transition-colors cursor-pointer outline-none border flex justify-between items-center">
+                                <button type="button" @click="open = true" class="w-full text-left rounded-xl border-slate-200 bg-white shadow-sm text-sm p-3 focus:border-emerald-500 focus:ring-emerald-500 transition-colors cursor-pointer outline-none border flex justify-between items-center">
                                     <span x-text="row.obat_name" :class="row.obat_id === '' ? 'text-slate-500' : 'text-slate-800 font-bold'"></span>
-                                    <svg class="w-4 h-4 text-slate-400 transition-transform" :class="open ? 'rotate-180' : ''" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                                    <svg class="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
                                 </button>
                                 
-                                <div x-show="open" style="display: none;" class="absolute z-50 w-full mt-1 bg-white border border-slate-200 rounded-xl shadow-xl max-h-60 overflow-hidden flex flex-col">
-                                    <div class="p-2 border-b border-slate-100 bg-slate-50">
-                                        <div class="relative">
-                                            <input type="text" x-model="search" placeholder="Cari nama obat..." class="w-full text-sm pl-8 pr-3 py-2 rounded-lg border-slate-200 focus:border-emerald-500 focus:ring-emerald-500 outline-none transition-colors" @click.stop>
-                                            <svg class="w-4 h-4 text-slate-400 absolute left-2.5 top-2.5 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
-                                        </div>
-                                    </div>
-                                    <div class="overflow-y-auto custom-scrollbar flex-1 p-1">
-                                        <div @click="selectOption(null)" class="px-3 py-2.5 text-sm text-slate-500 hover:bg-emerald-50 hover:text-emerald-700 rounded-lg cursor-pointer transition-colors flex items-center gap-2">
-                                            -- Tanpa Obat / Kosongkan --
-                                        </div>
-                                        <template x-for="opt in filteredOptions" :key="opt.id">
-                                            <div @click="selectOption(opt)" 
-                                                 class="px-3 py-2 text-sm text-slate-700 hover:bg-emerald-50 hover:text-emerald-700 rounded-lg cursor-pointer transition-colors font-medium flex items-center justify-between"
-                                                 :class="row.obat_id === opt.id ? 'bg-emerald-50 text-emerald-700' : ''">
-                                                <span x-text="opt.name"></span>
-                                                <svg x-show="row.obat_id === opt.id" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+                                <div class="fixed-teleport-fallback">
+                                    <div x-show="open" style="display: none;" class="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/40 backdrop-blur-sm" x-transition.opacity>
+                                        <div @click.away="open = false" x-show="open"
+                                            x-transition:enter="transition ease-out duration-300"
+                                            x-transition:enter-start="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
+                                            x-transition:enter-end="opacity-100 translate-y-0 sm:scale-100"
+                                            x-transition:leave="transition ease-in duration-200"
+                                            x-transition:leave-start="opacity-100 translate-y-0 sm:scale-100"
+                                            x-transition:leave-end="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
+                                            class="bg-white rounded-3xl shadow-2xl w-full max-w-lg flex flex-col relative mx-4 max-h-[80vh]">
+                                            
+                                            <div class="p-4 border-b border-slate-100 flex items-center justify-between">
+                                                <h3 class="font-bold text-slate-800">Pilih Obat</h3>
+                                                <button type="button" @click="open = false" class="text-slate-400 hover:text-slate-600 transition-colors">
+                                                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                                                </button>
                                             </div>
-                                        </template>
-                                        <div x-show="filteredOptions.length === 0" class="px-3 py-6 text-sm text-center text-slate-400 italic flex flex-col items-center gap-2">
-                                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-                                            Obat tidak ditemukan
+
+                                            <div class="p-4 border-b border-slate-100 bg-slate-50">
+                                                <div class="relative">
+                                                    <input type="text" x-model="search" placeholder="Cari nama obat..." class="w-full text-sm pl-10 pr-4 py-3 rounded-xl border-slate-200 focus:border-emerald-500 focus:ring-emerald-500 outline-none transition-colors shadow-sm" @click.stop>
+                                                    <svg class="w-5 h-5 text-slate-400 absolute left-3 top-3 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+                                                </div>
+                                            </div>
+
+                                            <div class="overflow-y-auto custom-scrollbar flex-1 p-2">
+                                                <div @click="selectOption(null)" class="px-4 py-3 text-sm text-slate-500 hover:bg-emerald-50 hover:text-emerald-700 rounded-xl cursor-pointer transition-colors flex items-center gap-2 mb-1">
+                                                    -- Tanpa Obat / Kosongkan --
+                                                </div>
+                                                <template x-for="opt in filteredOptions" :key="opt.id">
+                                                    <div @click="selectOption(opt)" 
+                                                         class="px-4 py-3 text-sm text-slate-700 hover:bg-emerald-50 hover:text-emerald-700 rounded-xl cursor-pointer transition-colors font-medium flex items-center justify-between mb-1"
+                                                         :class="row.obat_id === opt.id ? 'bg-emerald-50 text-emerald-700' : ''">
+                                                        <span x-text="opt.name"></span>
+                                                        <svg x-show="row.obat_id === opt.id" class="w-5 h-5 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+                                                    </div>
+                                                </template>
+                                                <div x-show="filteredOptions.length === 0" class="px-4 py-8 text-sm text-center text-slate-400 italic flex flex-col items-center gap-3">
+                                                    <svg class="w-8 h-8 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                                                    Obat tidak ditemukan
+                                                </div>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
@@ -522,6 +568,7 @@
                         <div class="w-full md:w-28">
                             <label class="block text-[11px] font-bold text-slate-500 mb-1.5 uppercase tracking-wider">Jumlah</label>
                             <input type="number" name="jumlah_obat[]" min="1" x-model="row.jumlah" class="w-full rounded-xl border-slate-200 bg-white shadow-sm text-sm p-3 focus:border-emerald-500 focus:ring-emerald-500 transition-colors outline-none text-center font-bold">
+                            <p x-show="row.obat_id !== '' && parseInt(row.jumlah || 0) > row.maxStok" class="text-xs text-red-500 mt-1 absolute font-bold" x-cloak>Stok hanya <span x-text="row.maxStok"></span></p>
                         </div>
                         <div class="flex-1 w-full">
                             <label class="block text-[11px] font-bold text-slate-500 mb-1.5 uppercase tracking-wider">Aturan Pakai</label>
@@ -535,14 +582,14 @@
                     </div>
                 </template>
             </div>
-        </div>
 
             <div class="flex justify-end pt-4 border-t border-slate-100">
-                <button type="submit" class="px-6 py-3 bg-blue-600 text-white font-bold rounded-xl shadow-lg shadow-blue-200 hover:bg-blue-700 active:scale-95 transition-all flex items-center gap-2">
+                <button type="button" @click="submitForm()" :disabled="isSubmitDisabled" :class="isSubmitDisabled ? 'bg-slate-400 cursor-not-allowed opacity-70' : 'bg-blue-600 hover:bg-blue-700 shadow-lg shadow-blue-200 active:scale-95'" class="px-6 py-3 text-white font-bold rounded-xl transition-all flex items-center gap-2">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
                     Simpan & Selesai Diperiksa
                 </button>
             </div>
+        </div>
         </form>
     </div>
 </div>
@@ -550,6 +597,7 @@
 @endsection
 
 @push('scripts')
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script>
     document.addEventListener('DOMContentLoaded', function() {
         // --- Odontogram Logic ---

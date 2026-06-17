@@ -491,9 +491,13 @@
                                 <td>
                                     <div style="display:flex; align-items:center; gap:12px;">
                                         <div class="avatar-wrap">
-                                            <img class="avatar-img"
-                                                src="https://ui-avatars.com/api/?name={{ urlencode($dokter->nama) }}&background=dbeafe&color=1d4ed8"
-                                                alt="Avatar {{ $dokter->nama }}">
+                                            @if($dokter->foto)
+                                                <img class="avatar-img" src="{{ Storage::url($dokter->foto) }}" alt="Foto {{ $dokter->nama }}">
+                                            @else
+                                                <img class="avatar-img"
+                                                    src="https://ui-avatars.com/api/?name={{ urlencode($dokter->nama) }}&background=dbeafe&color=1d4ed8"
+                                                    alt="Avatar {{ $dokter->nama }}">
+                                            @endif
                                             @if($dokter->is_active)
                                                 <span class="online-dot"></span>
                                             @endif
@@ -543,6 +547,73 @@
                                             </svg>
                                             Edit
                                         </a>
+                                        <form action="{{ route('superadmin.dokter.toggle-status', $dokter->id_user) }}" method="POST" class="inline" x-data="{ showToggleConfirm: false }" x-ref="toggleForm">
+                                            @csrf
+                                            @method('PATCH')
+                                            <button type="button" @click="showToggleConfirm = true"
+                                                class="btn-action {{ $dokter->is_active ? 'text-amber-600 bg-amber-50 hover:bg-amber-100' : 'text-emerald-600 bg-emerald-50 hover:bg-emerald-100' }}"
+                                                title="{{ $dokter->is_active ? 'Blokir Akun' : 'Aktifkan Akun' }}">
+                                                @if($dokter->is_active)
+                                                <svg width="13" height="13" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636"></path>
+                                                </svg>
+                                                Blokir
+                                                @else
+                                                <svg width="13" height="13" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                                </svg>
+                                                Aktifkan
+                                                @endif
+                                            </button>
+
+                                            <!-- Modal Konfirmasi Status -->
+                                            <template x-teleport="body">
+                                                <div x-show="showToggleConfirm" x-transition:enter="transition ease-out duration-300"
+                                                    x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100"
+                                                    x-transition:leave="transition ease-in duration-200"
+                                                    x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0"
+                                                    class="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm"
+                                                    style="display: none;">
+
+                                                    <div @click.away="showToggleConfirm = false" x-show="showToggleConfirm"
+                                                        x-transition:enter="transition ease-out duration-300"
+                                                        x-transition:enter-start="opacity-0 scale-95 translate-y-4"
+                                                        x-transition:enter-end="opacity-100 scale-100 translate-y-0"
+                                                        x-transition:leave="transition ease-in duration-200"
+                                                        x-transition:leave-start="opacity-100 scale-100 translate-y-0"
+                                                        x-transition:leave-end="opacity-0 scale-95 translate-y-4"
+                                                        class="bg-white rounded-3xl p-8 max-w-sm w-full shadow-2xl border border-slate-100 text-center relative overflow-hidden">
+
+                                                        @if($dokter->is_active)
+                                                        <div class="w-20 h-20 bg-amber-50 text-amber-500 rounded-full flex items-center justify-center mx-auto mb-6">
+                                                            <svg class="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636"></path>
+                                                            </svg>
+                                                        </div>
+                                                        <h3 class="font-bold text-xl text-slate-800 mb-3">Blokir Akun Dokter?</h3>
+                                                        <p class="text-slate-500 text-sm mb-8 leading-relaxed">Apakah Anda yakin ingin memblokir akun <span class="font-bold text-slate-800">{{ $dokter->nama }}</span>?</p>
+                                                        @else
+                                                        <div class="w-20 h-20 bg-emerald-50 text-emerald-500 rounded-full flex items-center justify-center mx-auto mb-6">
+                                                            <svg class="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                                            </svg>
+                                                        </div>
+                                                        <h3 class="font-bold text-xl text-slate-800 mb-3">Aktifkan Akun Dokter?</h3>
+                                                        <p class="text-slate-500 text-sm mb-8 leading-relaxed">Apakah Anda yakin ingin mengaktifkan kembali akun <span class="font-bold text-slate-800">{{ $dokter->nama }}</span>?</p>
+                                                        @endif
+
+                                                        <div class="grid grid-cols-2 gap-4">
+                                                            <button @click="showToggleConfirm = false" type="button" class="px-6 py-3 rounded-2xl text-sm font-bold text-slate-500 bg-slate-100 hover:bg-slate-200 transition-colors">
+                                                                Batal
+                                                            </button>
+                                                            <button type="button" @click="$refs.toggleForm.submit()" class="px-6 py-3 rounded-2xl text-sm font-bold text-white {{ $dokter->is_active ? 'bg-amber-500 hover:bg-amber-600 shadow-amber-100' : 'bg-emerald-500 hover:bg-emerald-600 shadow-emerald-100' }} transition-all shadow-lg">
+                                                                Ya, Lanjutkan
+                                                            </button>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </template>
+                                        </form>
                                         <form action="{{ route('superadmin.dokter.destroy', $dokter->id_user) }}" method="POST" x-data="{ showDeleteConfirm: false }" x-ref="deleteForm">
                                             @csrf
                                             @method('DELETE')

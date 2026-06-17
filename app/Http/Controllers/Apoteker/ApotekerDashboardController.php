@@ -15,17 +15,17 @@ class ApotekerDashboardController extends Controller
         $user = auth()->user();
         $cabang = $user->cabang;
 
-        // Antrian Obat (Selalu tampilkan yang Menunggu Obat, dan tampilkan yang Menunggu Pembayaran HANYA hari ini)
+        // Antrian Obat (Selalu tampilkan yang Menunggu Obat, dan tampilkan yang Menunggu Pembayaran & Selesai HANYA hari ini)
         $antrianObat = Reservasi::with(['user', 'rekamMedis.resepObats.obat'])
             ->where('cabang', $cabang)
             ->where(function($query) {
                 $query->where('status', 'Menunggu Obat')
                       ->orWhere(function($q) {
-                          $q->where('status', 'Menunggu Pembayaran')
+                          $q->whereIn('status', ['Menunggu Pembayaran', 'Selesai'])
                             ->whereDate('updated_at', today());
                       });
             })
-            ->orderByRaw("FIELD(status, 'Menunggu Obat', 'Menunggu Pembayaran') ASC")
+            ->orderByRaw("FIELD(status, 'Menunggu Obat', 'Menunggu Pembayaran', 'Selesai') ASC")
             ->orderBy('id_reservasi', 'asc')
             ->get();
 

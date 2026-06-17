@@ -13,16 +13,19 @@ class AdminPasienController extends Controller
      */
     public function index()
     {
-        $pasiens = User::where('role', 'pasien')->orderBy('created_at', 'desc')->get();
+        $pasiens = User::where('role', 'pasien')
+            ->where('email', 'not like', '%@maxilla.com')
+            ->orderBy('created_at', 'desc')
+            ->get();
         
         // Dynamic Stats
         $stats = [
-            'total_pasien' => User::where('role', 'pasien')->count(),
-            'akses_bpjs' => User::where('role', 'pasien')->where('tipe_pasien', 'bpjs')->count(),
-            'new_this_month' => User::where('role', 'pasien')
+            'total_pasien' => User::where('role', 'pasien')->where('email', 'not like', '%@maxilla.com')->count(),
+            'akses_bpjs' => User::where('role', 'pasien')->where('email', 'not like', '%@maxilla.com')->where('tipe_pasien', 'bpjs')->count(),
+            'new_this_month' => User::where('role', 'pasien')->where('email', 'not like', '%@maxilla.com')
                 ->where('created_at', '>=', now()->startOfMonth())
                 ->count(),
-            'kunjungan_terakhir' => User::where('role', 'pasien')
+            'kunjungan_terakhir' => User::where('role', 'pasien')->where('email', 'not like', '%@maxilla.com')
                 ->where('created_at', '>=', now()->subDays(30))
                 ->count(),
             'daftar_hitam' => 0 // Placeholder
@@ -54,5 +57,18 @@ class AdminPasienController extends Controller
         $pasien->delete();
 
         return redirect()->route('superadmin.pasien.index')->with('success', "Akun pasien $nama berhasil dihapus.");
+    }
+
+    public function toggleStatus($id)
+    {
+        $user = User::findOrFail($id);
+        if ($user->role !== 'pasien') {
+            abort(403);
+        }
+        $user->is_active = !$user->is_active;
+        $user->save();
+
+        $statusText = $user->is_active ? 'diaktifkan' : 'dinonaktifkan (diblokir)';
+        return redirect()->back()->with('success', "Akun pasien berhasil {$statusText}.");
     }
 }

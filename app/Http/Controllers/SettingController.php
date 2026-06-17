@@ -98,6 +98,20 @@ class SettingController extends Controller
         if ($request->has('teks_copyright'))
             $setting->teks_copyright = $request->teks_copyright;
 
+        // Bantuan WA Cabang
+        if ($request->has('wa_tegal'))
+            $setting->wa_tegal = $request->wa_tegal;
+        if ($request->has('wa_slawi'))
+            $setting->wa_slawi = $request->wa_slawi;
+        if ($request->has('wa_brebes'))
+            $setting->wa_brebes = $request->wa_brebes;
+        if ($request->has('wa_template_tegal'))
+            $setting->wa_template_tegal = $request->wa_template_tegal;
+        if ($request->has('wa_template_slawi'))
+            $setting->wa_template_slawi = $request->wa_template_slawi;
+        if ($request->has('wa_template_brebes'))
+            $setting->wa_template_brebes = $request->wa_template_brebes;
+
         // Data Multi-Dimensi Arrays (JSON) dapat ditangkap sebagai array manual dari Frontend, 
         // atau jika saat ini form-nya belum mendukung array input, kita biarkan form yg ada menyimpan sementara 
         // Array Solusi (Layanan)

@@ -93,4 +93,46 @@ class DokterDashboardController extends Controller
 
         return view('dokter.riwayat.index', compact('riwayats'));
     }
+
+    public function profil()
+    {
+        $user = \Illuminate\Support\Facades\Auth::user();
+        return view('dokter.profil.index', compact('user'));
+    }
+
+    public function updateProfil(Request $request)
+    {
+        $user = \Illuminate\Support\Facades\Auth::user();
+
+        $request->validate([
+            'nama' => 'required|string|max:255',
+            'email' => 'required|string|email|max:255|unique:users,email,' . $user->id_user . ',id_user',
+            'no_wa' => 'nullable|string|max:20',
+            'password' => 'nullable|string|min:8|confirmed',
+            'foto' => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
+        ]);
+
+        $user->nama = $request->nama;
+        $user->email = $request->email;
+        $user->no_wa = $request->no_wa;
+
+        if ($request->hasFile('foto')) {
+            // Delete old photo if it exists
+            if ($user->foto && \Illuminate\Support\Facades\Storage::disk('public')->exists($user->foto)) {
+                \Illuminate\Support\Facades\Storage::disk('public')->delete($user->foto);
+            }
+
+            // Store new photo
+            $path = $request->file('foto')->store('foto_profil', 'public');
+            $user->foto = $path;
+        }
+
+        if ($request->filled('password')) {
+            $user->password = \Illuminate\Support\Facades\Hash::make($request->password);
+        }
+
+        $user->save();
+
+        return redirect()->route('dokter.profil')->with('success', 'Profil berhasil diperbarui!');
+    }
 }

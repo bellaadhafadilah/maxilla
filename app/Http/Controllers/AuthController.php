@@ -4,6 +4,8 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Laravel\Socialite\Facades\Socialite;
+use Illuminate\Support\Str;
 
 class AuthController extends Controller
 {
@@ -34,6 +36,16 @@ class AuthController extends Controller
             $request->session()->regenerate();
 
             $user = Auth::user();
+            
+            if (!$user->is_active) {
+                Auth::logout();
+                $request->session()->invalidate();
+                $request->session()->regenerateToken();
+                return back()->withErrors([
+                    $loginField => 'Akun Anda telah dinonaktifkan. Silakan hubungi admin.',
+                ])->onlyInput($loginField);
+            }
+
             $user->update([
                 'last_login_at' => now(),
                 'last_login_ip' => $request->ip(),
@@ -50,6 +62,9 @@ class AuthController extends Controller
             } elseif ($user->role === 'kasir') {
                 return redirect()->intended('/kasir/dashboard');
             } elseif ($user->role === 'pasien') {
+                if (empty($user->nik) || empty($user->no_wa)) {
+                    return redirect()->intended('/pasien/profil/lengkapi')->with('warning', 'Silakan lengkapi profil Anda (NIK dan No. HP) sebelum melakukan reservasi.');
+                }
                 return redirect()->intended('/pasien/dashboard');
             }
 
@@ -69,31 +84,64 @@ class AuthController extends Controller
     {
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:255'],
-            'nik' => ['required', 'string', 'size:16', 'unique:users,nik'],
             'email' => ['required', 'string', 'email', 'max:255', 'unique:users,email'],
-            'phone' => ['required', 'string', 'max:20'],
             'password' => ['required', 'string', 'min:8', 'confirmed'],
         ], [
-            'nik.unique' => 'Nomor e-KTP (NIK) ini sudah terdaftar sebelumnya.',
             'email.unique' => 'Alamat email ini sudah terdaftar.',
             'password.confirmed' => 'Konfirmasi password tidak cocok.',
-            'nik.size' => 'NIK harus tepat 16 digit.',
             'password.min' => 'Password minimal harus 8 karakter.',
         ]);
 
         $user = \App\Models\User::create([
             'nama' => $validated['name'],
-            'nik' => $validated['nik'],
             'email' => $validated['email'],
-            'no_wa' => $validated['phone'],
             'password' => bcrypt($validated['password']),
             'role' => 'pasien',
             'is_active' => true,
         ]);
 
-        Auth::login($user);
+        event(new \Illuminate\Auth\Events\Registered($user));
 
-        return redirect('/pasien/dashboard');
+        // Redirect back to register page with the user's email in session to show the verification notice
+        return redirect()->route('register')->with('registered_email', $user->email);
+    }
+
+    /**
+     * Verify email from the link without requiring login.
+     */
+    public function verifyEmail($id, $hash)
+    {
+        $user = \App\Models\User::find($id);
+
+        if (!$user) {
+            return redirect('/login')->withErrors(['email' => 'Pengguna tidak ditemukan atau akun sudah dihapus.']);
+        }
+
+        if (! hash_equals((string) $hash, sha1($user->getEmailForVerification()))) {
+            return redirect('/login')->withErrors(['email' => 'Link verifikasi tidak valid atau sudah kadaluarsa.']);
+        }
+
+        if (!$user->hasVerifiedEmail()) {
+            $user->markEmailAsVerified();
+            event(new \Illuminate\Auth\Events\Verified($user));
+        }
+
+        return redirect('/login')->with('success', 'Email berhasil diverifikasi! Silakan login.');
+    }
+
+    /**
+     * Resend verification email for unregistered/unverified users.
+     */
+    public function resendVerification(Request $request)
+    {
+        $request->validate(['email' => 'required|email']);
+        $user = \App\Models\User::where('email', $request->email)->first();
+
+        if ($user && !$user->hasVerifiedEmail()) {
+            $user->sendEmailVerificationNotification();
+        }
+
+        return redirect()->route('register')->with('registered_email', $request->email)->with('resent', true);
     }
 
     /**
@@ -107,5 +155,104 @@ class AuthController extends Controller
         $request->session()->regenerateToken();
 
         return redirect('/');
+    }
+
+    /**
+     * Redirect to Google OAuth.
+     */
+    public function redirectToGoogle()
+    {
+        return Socialite::driver('google')->redirect();
+    }
+
+    /**
+     * Handle Google OAuth Callback.
+     */
+    public function handleGoogleCallback()
+    {
+        try {
+            $googleUser = Socialite::driver('google')
+                ->setHttpClient(new \GuzzleHttp\Client(['verify' => false]))
+                ->user();
+            
+            $user = \App\Models\User::where('email', $googleUser->getEmail())->first();
+
+            if ($user) {
+                // Update google_id if empty
+                if (!$user->google_id) {
+                    $user->update(['google_id' => $googleUser->getId()]);
+                }
+                
+                // Jika belum diverifikasi, arahkan ke halaman tunggu verifikasi
+                if (!$user->hasVerifiedEmail()) {
+                    return redirect()->route('register')->with('registered_email', $user->email);
+                }
+                
+                if (!$user->is_active) {
+                    return redirect('/login')->withErrors(['email' => 'Akun Anda telah dinonaktifkan. Silakan hubungi admin.']);
+                }
+
+                // Jika sudah verifikasi, login
+                Auth::login($user);
+                
+                $user->update([
+                    'last_login_at' => now(),
+                    'last_login_ip' => request()->ip(),
+                ]);
+                
+                if ($user->role === 'superadmin') return redirect()->intended('/superadmin/dashboard');
+                elseif ($user->role === 'admin') return redirect()->intended('/admin/dashboard');
+                elseif ($user->role === 'dokter') return redirect()->intended('/dokter/dashboard');
+                elseif ($user->role === 'apoteker') return redirect()->intended('/apoteker/dashboard');
+                elseif ($user->role === 'kasir') return redirect()->intended('/kasir/dashboard');
+                elseif ($user->role === 'pasien') {
+                    if (empty($user->nik) || empty($user->no_wa)) {
+                        return redirect()->intended('/pasien/profil/lengkapi')->with('warning', 'Silakan lengkapi profil Anda (NIK dan No. HP) sebelum melakukan reservasi.');
+                    }
+                    return redirect()->intended('/pasien/dashboard');
+                }
+                
+                return redirect()->intended('/');
+                
+            } else {
+                // Create new user (Daftar via Google)
+                $user = \App\Models\User::create([
+                    'nama' => $googleUser->getName(),
+                    'email' => $googleUser->getEmail(),
+                    'google_id' => $googleUser->getId(),
+                    'password' => bcrypt(\Illuminate\Support\Str::random(16)), // Random password
+                    'role' => 'pasien',
+                    'is_active' => true,
+                    // email_verified_at tetap NULL agar harus diverifikasi
+                ]);
+
+                // Kirim email verifikasi
+                event(new \Illuminate\Auth\Events\Registered($user));
+
+                // Arahkan ke halaman tunggu verifikasi (tidak langsung login)
+                return redirect()->route('register')->with('registered_email', $user->email);
+            }
+
+        } catch (\Exception $e) {
+            \Illuminate\Support\Facades\Log::error('Google OAuth Error: ' . $e->getMessage(), ['trace' => $e->getTraceAsString()]);
+            // If local environment, let's show the actual error to debug easily
+            if (app()->environment('local')) {
+                return redirect('/login')->withErrors(['email' => 'Gagal login dengan Google: ' . $e->getMessage()]);
+            }
+            return redirect('/login')->withErrors(['email' => 'Gagal login dengan Google. Silakan coba lagi.']);
+        }
+    }
+
+    public function checkVerification(\Illuminate\Http\Request $request)
+    {
+        $email = $request->query('email');
+        if (!$email) {
+            return response()->json(['verified' => false]);
+        }
+        $user = \App\Models\User::where('email', $email)->first();
+        if ($user && $user->hasVerifiedEmail()) {
+            return response()->json(['verified' => true]);
+        }
+        return response()->json(['verified' => false]);
     }
 }
