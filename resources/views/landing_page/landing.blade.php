@@ -153,7 +153,7 @@
                                 </div>
                                 <div>
                                     <h4 class="text-base font-bold text-slate-800">Mulai Reservasi Booking Antrian</h4>
-                                    <p class="mt-1 text-sm text-slate-600">Buka menu dasbor <b>Buat Reservasi</b>, pilih poli tujuan, cabang (Slawi / Tegal / Brebes), tentukan tanggal yang sesuai, tipe pembiayaan (BPJS / Umum) beserta keluhan utama.</p>
+                                    <p class="mt-1 text-sm text-slate-600">Buka menu dasbor <b>Buat Reservasi</b>, pilih cabang (Slawi / Tegal / Brebes), tentukan dokter, tanggal dan jam yang sesuai, beserta keluhan utama.</p>
                                 </div>
                             </div>
                             <!-- Step 4 -->
