@@ -115,11 +115,39 @@ class BookingController extends Controller
         $carbonDate = \Carbon\Carbon::parse($tanggal)->locale('id');
         $hari = $carbonDate->translatedFormat('l'); // 'Senin', 'Selasa', dll
 
-        $dokters = JadwalDokter::where('cabang', $cabang)
+        $jadwal = JadwalDokter::where('cabang', $cabang)
             ->where('hari', $hari)
             ->where('sesi', $sesi)
-            ->select('id', 'dokter_nama')
+            ->select('id', 'dokter_nama', 'kuota')
             ->get();
+
+        $dokters = $jadwal->map(function ($j) use ($tanggal, $sesi, $cabang) {
+            // Bersihkan nama dokter untuk dicari di User
+            $dokterClean = preg_replace('/^(drg\.|dr\.|drg|dr)\s+/i', '', $j->dokter_nama);
+            $userDokter = User::where('role', 'dokter')
+                ->where('nama', 'LIKE', '%' . $dokterClean . '%')
+                ->first();
+            
+            $foto = $userDokter && $userDokter->foto ? asset('storage/' . $userDokter->foto) : null;
+
+            // Hitung kuota yang sudah terisi
+            $terisi = Reservasi::where('tanggal', $tanggal)
+                ->where('jam', $sesi)
+                ->where('cabang', $cabang)
+                ->where('dokter_nama', $j->dokter_nama)
+                ->whereNotIn('status', ['Dibatalkan', 'Kadaluarsa'])
+                ->count();
+            
+            $sisa_kuota = max(0, $j->kuota - $terisi);
+
+            return [
+                'id' => $j->id,
+                'dokter_nama' => $j->dokter_nama,
+                'foto' => $foto,
+                'sisa_kuota' => $sisa_kuota,
+                'kuota_awal' => $j->kuota
+            ];
+        });
 
         return response()->json($dokters);
     }
@@ -165,14 +193,16 @@ public function store(Request $request)
         'dokter' => 'required|string',
         'hubungan' => 'nullable|string|max:100',
         'keluhan' => 'nullable|string|max:1000',
+        'email' => 'nullable|email|max:255',
+        'no_wa' => 'nullable|string|max:20',
     ]);
 
     // 1. Cari atau buat User dengan role 'pasien' berdasarkan NIK
     $user = User::where('nik', $request->nik)->first();
 
     if (!$user) {
-        // Generate automatic email based on NIK to satisfy database constraints
-        $email = $request->nik . '@maxilla.com';
+        // Gunakan email yang diinput, atau generate automatic email based on NIK
+        $email = $request->filled('email') ? $request->email : ($request->nik . '@maxilla.com');
         
         // Buat User baru
         $user = User::create([
@@ -180,14 +210,21 @@ public function store(Request $request)
             'nik' => $request->nik,
             'email' => $email,
             'password' => bcrypt($request->nik), // password default adalah NIK
+            'no_wa' => $request->no_wa,
             'role' => 'pasien',
             'is_active' => true,
         ]);
     } else {
-        // Update nama user jika ada perubahan dari admin
-        $user->update([
-            'nama' => $request->nama_pasien,
-        ]);
+        // Update nama user dan no_wa jika ada perubahan dari admin
+        $updateData = ['nama' => $request->nama_pasien];
+        if ($request->filled('no_wa')) {
+            $updateData['no_wa'] = $request->no_wa;
+        }
+        if ($request->filled('email')) {
+            $updateData['email'] = $request->email;
+        }
+        
+        $user->update($updateData);
     }
 
     // 2. Buat atau update profil medis di tabel pasiens

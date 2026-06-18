@@ -202,9 +202,36 @@ class PasienController extends Controller
         $jadwal = \App\Models\JadwalDokter::where('cabang', $cabang)
             ->where('hari', $hari)
             ->where('sesi', $sesi)
+            ->select('id', 'dokter_nama', 'kuota')
             ->get();
 
-        return response()->json($jadwal);
+        $dokters = $jadwal->map(function ($j) use ($tanggal, $sesi, $cabang) {
+            $dokterClean = preg_replace('/^(drg\.|dr\.|drg|dr)\s+/i', '', $j->dokter_nama);
+            $userDokter = \App\Models\User::where('role', 'dokter')
+                ->where('nama', 'LIKE', '%' . $dokterClean . '%')
+                ->first();
+
+            $foto = $userDokter && $userDokter->foto ? asset('storage/' . $userDokter->foto) : null;
+
+            $terisi = \App\Models\Reservasi::where('tanggal', $tanggal)
+                ->where('jam', $sesi)
+                ->where('cabang', $cabang)
+                ->where('dokter_nama', $j->dokter_nama)
+                ->whereNotIn('status', ['Dibatalkan', 'Kadaluarsa'])
+                ->count();
+
+            $sisa_kuota = max(0, $j->kuota - $terisi);
+
+            return [
+                'id' => $j->id,
+                'dokter_nama' => $j->dokter_nama,
+                'foto' => $foto,
+                'sisa_kuota' => $sisa_kuota,
+                'kuota_awal' => $j->kuota
+            ];
+        });
+
+        return response()->json($dokters);
     }
 
 
@@ -264,10 +291,14 @@ class PasienController extends Controller
 
         foreach ($staff as $userStaff) {
             $url = '#';
-            if ($userStaff->role === 'admin') $url = '/admin/booking';
-            elseif ($userStaff->role === 'dokter') $url = '/dokter/antrian';
-            elseif ($userStaff->role === 'apoteker') $url = '/apoteker/antrian';
-            elseif ($userStaff->role === 'kasir') $url = '/kasir/dashboard';
+            if ($userStaff->role === 'admin')
+                $url = '/admin/booking';
+            elseif ($userStaff->role === 'dokter')
+                $url = '/dokter/antrian';
+            elseif ($userStaff->role === 'apoteker')
+                $url = '/apoteker/antrian';
+            elseif ($userStaff->role === 'kasir')
+                $url = '/kasir/dashboard';
 
             $userStaff->notify(new \App\Notifications\SystemNotification(
                 'Pasien Hadir (Check-In)',
@@ -344,7 +375,7 @@ class PasienController extends Controller
         } else {
             \App\Models\Reservasi::create($data);
             $message = 'Reservasi berhasil diajukan!';
-            
+
             // Notify all relevant staff roles (Admin)
             $cabang = $validated['cabang'];
             $staff = \App\Models\User::whereIn('role', ['admin'])
@@ -364,10 +395,14 @@ class PasienController extends Controller
 
             foreach ($staff as $userStaff) {
                 $url = '#';
-                if ($userStaff->role === 'admin') $url = '/admin/booking';
-                elseif ($userStaff->role === 'dokter') $url = '/dokter/antrian';
-                elseif ($userStaff->role === 'apoteker') $url = '/apoteker/antrian';
-                elseif ($userStaff->role === 'kasir') $url = '/kasir/dashboard';
+                if ($userStaff->role === 'admin')
+                    $url = '/admin/booking';
+                elseif ($userStaff->role === 'dokter')
+                    $url = '/dokter/antrian';
+                elseif ($userStaff->role === 'apoteker')
+                    $url = '/apoteker/antrian';
+                elseif ($userStaff->role === 'kasir')
+                    $url = '/kasir/dashboard';
 
                 $userStaff->notify(new \App\Notifications\SystemNotification(
                     'Reservasi Baru',

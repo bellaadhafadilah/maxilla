@@ -24,13 +24,15 @@
 
 <form action="{{ route('admin.booking.store') }}"
     method="POST"
-
+    id="formBooking"
+    @submit.prevent="confirmSubmit()"
     x-data="{
         tanggal:'',
         jam:'',
         dokter:'',
         dokters:[],
         loading:false,
+        showDokterModal:false,
         nik:'',
         nama_pasien:'',
         jenis_kelamin_pasien:'Laki-laki',
@@ -39,6 +41,8 @@
         riwayat_penyakit:'',
         alergi_obat:'',
         hubungan:'Diri Sendiri',
+        email:'',
+        no_wa:'',
 
         fetchDokters() {
             if(this.tanggal && this.jam){
@@ -72,6 +76,28 @@
                     }
                 });
             }
+        },
+
+        confirmSubmit() {
+            Swal.fire({
+                title: 'Konfirmasi Data',
+                text: 'Apakah data yang dimasukkan sudah benar?',
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonColor: '#2563eb',
+                cancelButtonColor: '#ef4444',
+                confirmButtonText: 'Ya, Simpan!',
+                cancelButtonText: 'Batal',
+                customClass: {
+                    popup: 'rounded-2xl',
+                    confirmButton: 'rounded-xl px-6 py-2',
+                    cancelButton: 'rounded-xl px-6 py-2'
+                }
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    document.getElementById('formBooking').submit();
+                }
+            })
         }
     }">
 
@@ -120,6 +146,29 @@
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
                         <label class="block text-sm font-semibold text-slate-700 mb-2">
+                            Email <span class="text-xs text-slate-400 font-normal">(Opsional)</span>
+                        </label>
+                        <input type="email"
+                            name="email"
+                            x-model="email"
+                            placeholder="Contoh: pasien@email.com"
+                            class="w-full border border-slate-200 rounded-xl px-4 py-3 focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 outline-none transition-all">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-semibold text-slate-700 mb-2">
+                            No. WhatsApp <span class="text-xs text-slate-400 font-normal">(Opsional)</span>
+                        </label>
+                        <input type="text"
+                            name="no_wa"
+                            x-model="no_wa"
+                            placeholder="Contoh: 08123456789"
+                            class="w-full border border-slate-200 rounded-xl px-4 py-3 focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 outline-none transition-all">
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-semibold text-slate-700 mb-2">
                             Jenis Kelamin
                         </label>
                         <select name="jenis_kelamin_pasien"
@@ -138,6 +187,7 @@
                         <input type="date"
                             name="tanggal_lahir_pasien"
                             x-model="tanggal_lahir_pasien"
+                            max="{{ now()->subYears(4)->format('Y-m-d') }}"
                             required
                             class="w-full border border-slate-200 rounded-xl px-4 py-3 focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 outline-none transition-all cursor-pointer">
                     </div>
@@ -211,6 +261,7 @@
                         name="tanggal"
                         x-model="tanggal"
                         @change="fetchDokters()"
+                        min="{{ now()->format('Y-m-d') }}"
                         required
                         class="w-full border border-slate-200 rounded-xl px-4 py-3 focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 outline-none transition-all cursor-pointer">
                 </div>
@@ -235,16 +286,89 @@
                     <label class="block text-sm font-semibold text-slate-700 mb-2">
                         Dokter
                     </label>
-                    <select name="dokter"
-                        x-model="dokter"
-                        required
-                        class="w-full border border-slate-200 rounded-xl px-4 py-3 focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 outline-none transition-all cursor-pointer disabled:bg-slate-50 disabled:text-slate-400"
-                        :disabled="!tanggal || !jam || loading">
-                        <option value="">Pilih Dokter</option>
-                        <template x-for="d in dokters">
-                            <option :value="d.dokter_nama" x-text="d.dokter_nama"></option>
-                        </template>
-                    </select>
+                    <div class="relative">
+                        <!-- Hidden input to store value for form submission -->
+                        <input type="hidden" name="dokter" x-model="dokter" required>
+                        
+                        <!-- Visible trigger button/input -->
+                        <button type="button"
+                            @click="if(tanggal && jam && !loading) showDokterModal = true"
+                            :disabled="!tanggal || !jam || loading"
+                            class="w-full border border-slate-200 rounded-xl px-4 py-3 focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 outline-none transition-all cursor-pointer text-left bg-white disabled:bg-slate-50 disabled:text-slate-400 flex justify-between items-center">
+                            <span x-text="dokter ? dokter : (loading ? 'Mencari dokter...' : 'Pilih Dokter')"></span>
+                            <svg class="w-5 h-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                        </button>
+                    </div>
+
+                    <!-- Modal Pilih Dokter -->
+                    <template x-teleport="body">
+                        <div x-show="showDokterModal" x-transition:enter="transition ease-out duration-300"
+                            x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100"
+                            x-transition:leave="transition ease-in duration-200"
+                            x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0"
+                            class="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm"
+                            style="display: none;">
+
+                            <div @click.away="showDokterModal = false" x-show="showDokterModal"
+                                x-transition:enter="transition ease-out duration-300"
+                                x-transition:enter-start="opacity-0 scale-95 translate-y-4"
+                                x-transition:enter-end="opacity-100 scale-100 translate-y-0"
+                                x-transition:leave="transition ease-in duration-200"
+                                x-transition:leave-start="opacity-100 scale-100 translate-y-0"
+                                x-transition:leave-end="opacity-0 scale-95 translate-y-4"
+                                class="bg-white rounded-3xl p-6 max-w-md w-full shadow-2xl border border-slate-100 relative overflow-hidden flex flex-col max-h-[90vh]">
+                                
+                                <div class="flex justify-between items-center mb-4">
+                                    <h3 class="font-bold text-xl text-slate-800">Pilih Dokter</h3>
+                                    <button type="button" @click="showDokterModal = false" class="text-slate-400 hover:text-slate-600">
+                                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                                    </button>
+                                </div>
+
+                                <div class="overflow-y-auto space-y-3 pr-2 flex-1">
+                                    <template x-if="dokters.length === 0">
+                                        <div class="text-center p-6 text-slate-500">
+                                            Tidak ada dokter yang tersedia pada jadwal tersebut.
+                                        </div>
+                                    </template>
+                                    <template x-for="d in dokters" :key="d.id">
+                                        <button type="button"
+                                            @click="if(d.sisa_kuota > 0) { dokter = d.dokter_nama; showDokterModal = false; }"
+                                            :disabled="d.sisa_kuota <= 0"
+                                            class="w-full text-left p-4 rounded-2xl border-2 flex items-center gap-4 transition-all"
+                                            :class="dokter === d.dokter_nama ? 'border-blue-500 bg-blue-50' : (d.sisa_kuota > 0 ? 'border-slate-100 hover:border-blue-200 cursor-pointer' : 'border-slate-100 bg-slate-50 opacity-60 cursor-not-allowed')">
+                                            
+                                            <div class="shrink-0 w-12 h-12 rounded-full overflow-hidden bg-slate-200 border border-slate-300">
+                                                <template x-if="d.foto">
+                                                    <img :src="d.foto" alt="Foto Dokter" class="w-full h-full object-cover">
+                                                </template>
+                                                <template x-if="!d.foto">
+                                                    <div class="w-full h-full flex items-center justify-center text-slate-400 font-bold text-lg bg-blue-100 text-blue-600">
+                                                        <span x-text="d.dokter_nama.replace('Drg. ', '').replace('drg. ', '').replace('Dr. ', '').replace('dr. ', '').charAt(0)"></span>
+                                                    </div>
+                                                </template>
+                                            </div>
+                                            
+                                            <div class="flex-1">
+                                                <div class="font-bold text-slate-800 text-base" x-text="d.dokter_nama"></div>
+                                                <div class="text-xs font-semibold mt-1"
+                                                    :class="d.sisa_kuota > 0 ? (d.sisa_kuota <= 3 ? 'text-orange-500' : 'text-green-500') : 'text-red-500'">
+                                                    Sisa Kuota: <span x-text="d.sisa_kuota"></span>/<span x-text="d.kuota_awal"></span>
+                                                    <template x-if="d.sisa_kuota <= 0">
+                                                        <span> (Penuh)</span>
+                                                    </template>
+                                                </div>
+                                            </div>
+
+                                            <div class="shrink-0 text-blue-500" x-show="dokter === d.dokter_nama">
+                                                <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path></svg>
+                                            </div>
+                                        </button>
+                                    </template>
+                                </div>
+                            </div>
+                        </div>
+                    </template>
                 </div>
 
             </div>
@@ -276,5 +400,7 @@
 </form>
 
 </div>
+
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
 @endsection

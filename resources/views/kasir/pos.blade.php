@@ -84,6 +84,8 @@
                         'id' => $reservasi->id_reservasi,
                         'id_transaksi' => $reservasi->transaksi->id_transaksi ?? null,
                         'nama' => $reservasi->nama_pasien ?? ($reservasi->user->nama ?? 'Pasien'),
+                        'email' => $reservasi->user->email ?? '',
+                        'no_wa' => $reservasi->user->no_wa ?? '',
                         'hubungan' => $reservasi->hubungan,
                         'status' => $reservasi->status,
                         'planning' => $reservasi->rekamMedis->planning ?? 'Tindakan Medis',
@@ -285,10 +287,18 @@
                                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path></svg>
                                     Cetak Struk
                                 </button>
-                                <button @click="kirimStruk(selectedPasien?.id_transaksi)" class="w-full py-4 bg-blue-600 text-white rounded-2xl font-black uppercase tracking-widest text-xs shadow-xl transition-all hover:bg-blue-700 active:scale-95 flex items-center justify-center gap-3">
-                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path></svg>
-                                    Kirim ke Email
-                                </button>
+                                <template x-if="selectedPasien?.email && selectedPasien.email.includes('@maxilla.com')">
+                                    <button @click="kirimWA(selectedPasien)" class="w-full py-4 bg-[#25D366] text-white rounded-2xl font-black uppercase tracking-widest text-xs shadow-xl transition-all hover:bg-[#1DA851] active:scale-95 flex items-center justify-center gap-3">
+                                        <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M12.031 0C5.394 0 0 5.394 0 12.031c0 2.122.553 4.195 1.603 6.012L.19 24l6.115-1.603a11.96 11.96 0 0 0 5.726 1.455h.005c6.634 0 12.028-5.394 12.028-12.031S18.667 0 12.031 0zm0 21.84c-1.794 0-3.55-.482-5.093-1.397l-.365-.216-3.784.992.999-3.69-.236-.376a10.016 10.016 0 0 1-1.531-5.344c0-5.526 4.498-10.024 10.026-10.024 2.678 0 5.195 1.042 7.088 2.937a10.007 10.007 0 0 1 2.932 7.086c-.001 5.526-4.498 10.025-10.025 10.025zm5.5-7.518c-.302-.151-1.785-.881-2.062-.981-.277-.101-.478-.151-.68.151-.201.302-.78 1.002-.956 1.203-.176.202-.352.227-.654.076-1.512-.765-2.613-1.677-3.606-3.385-.202-.351-.02-.544.131-.695.136-.136.302-.352.453-.528.151-.176.201-.302.302-.503.1-.201.05-.377-.025-.528-.076-.151-.68-1.637-.932-2.241-.246-.59-.496-.51-.68-.519-.176-.008-.377-.008-.578-.008-.201 0-.528.076-.805.377-.277.302-1.057 1.032-1.057 2.516 0 1.484 1.082 2.918 1.233 3.119.151.201 2.128 3.248 5.155 4.553.721.311 1.284.497 1.724.636.723.23 1.382.197 1.902.12.58-.086 1.785-.729 2.037-1.434.251-.705.251-1.309.176-1.434-.076-.126-.277-.202-.579-.353z"></path></svg>
+                                        Kirim via WA
+                                    </button>
+                                </template>
+                                <template x-if="!selectedPasien?.email || !selectedPasien.email.includes('@maxilla.com')">
+                                    <button @click="kirimStruk(selectedPasien?.id_transaksi)" class="w-full py-4 bg-blue-600 text-white rounded-2xl font-black uppercase tracking-widest text-xs shadow-xl transition-all hover:bg-blue-700 active:scale-95 flex items-center justify-center gap-3">
+                                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path></svg>
+                                        Kirim ke Email
+                                    </button>
+                                </template>
                             </div>
                         </div>
                     </div>
@@ -431,6 +441,43 @@
                     this.triggerAlert('Kesalahan', 'Terjadi kesalahan koneksi.');
                 });
             },
+
+            kirimWA(pasien) {
+                if (!pasien) return;
+                
+                if (!pasien.no_wa) {
+                    this.triggerAlert('Informasi', 'Sistem mendeteksi pasien tidak memiliki alamat email, namun Nomor WA pasien juga belum diisi saat pendaftaran.');
+                    return;
+                }
+                
+                let message = `*Klinik Maxilla*\n\nHalo *${pasien.nama}*,\nTerima kasih atas kunjungan Anda. Berikut adalah ringkasan pembayaran Anda:\n\n`;
+                
+                if (Number(pasien.biaya_tindakan) > 0) {
+                    message += `*Jasa Medis / Tindakan*\n${pasien.planning}\n${this.formatRupiah(pasien.biaya_tindakan)}\n\n`;
+                }
+                
+                if (pasien.resep && pasien.resep.length > 0) {
+                    message += `*Obat-obatan*\n`;
+                    pasien.resep.forEach(r => {
+                        message += `- ${r.nama} (${r.jumlah}x): ${this.formatRupiah(r.subtotal)}\n`;
+                    });
+                    message += `\n`;
+                }
+                
+                let total = Number(pasien.total_obat || 0) + Number(pasien.biaya_tindakan || 0);
+                message += `*Total Pembayaran: ${this.formatRupiah(total)}*\n\n`;
+                message += `Semoga sehat selalu!\n\n_Pesan ini dikirim otomatis oleh Sistem_`;
+                
+                let encodedMessage = encodeURIComponent(message);
+                
+                let phone = pasien.no_wa;
+                if (phone.startsWith('0')) {
+                    phone = '62' + phone.substring(1);
+                }
+                
+                window.open(`https://wa.me/${phone}?text=${encodedMessage}`, '_blank');
+            },
+
             init() {
                 // Jika baru saja menyelesaikan transaksi, pilih otomatis pasien tersebut
                 @if(session('cetak_struk_id'))

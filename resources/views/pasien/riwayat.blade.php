@@ -90,7 +90,8 @@
                                 class="block px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-50 hover:text-primary transition-colors">Profil
                                 Saya</a>
                             <div class="border-t border-slate-100 my-1"></div>
-                            <form action="{{ route('logout') }}" method="POST" x-data="{ showLogoutConfirm: false }" x-ref="logoutForm">
+                            <form action="{{ route('logout') }}" method="POST" x-data="{ showLogoutConfirm: false }"
+                                x-ref="logoutForm">
                                 @csrf
                                 <button type="button" @click="showLogoutConfirm = true"
                                     class="w-full text-left block px-4 py-2 text-sm font-bold text-red-500 hover:bg-red-50 transition-colors">
@@ -98,7 +99,8 @@
                                 </button>
                                 <!-- Modal Konfirmasi Logout -->
                                 <template x-teleport="body">
-                                    <div x-show="showLogoutConfirm" x-transition:enter="transition ease-out duration-300"
+                                    <div x-show="showLogoutConfirm"
+                                        x-transition:enter="transition ease-out duration-300"
                                         x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100"
                                         x-transition:leave="transition ease-in duration-200"
                                         x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0"
@@ -114,20 +116,28 @@
                                             x-transition:leave-end="opacity-0 scale-95 translate-y-4"
                                             class="bg-white rounded-3xl p-8 max-w-sm w-full shadow-2xl border border-slate-100 text-center relative overflow-hidden">
 
-                                            <div class="w-20 h-20 bg-red-50 text-red-500 rounded-full flex items-center justify-center mx-auto mb-6">
-                                                <svg class="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path>
+                                            <div
+                                                class="w-20 h-20 bg-red-50 text-red-500 rounded-full flex items-center justify-center mx-auto mb-6">
+                                                <svg class="w-10 h-10" fill="none" stroke="currentColor"
+                                                    viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round"
+                                                        stroke-width="2"
+                                                        d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1">
+                                                    </path>
                                                 </svg>
                                             </div>
 
                                             <h3 class="font-bold text-xl text-slate-800 mb-3">Konfirmasi Logout</h3>
-                                            <p class="text-slate-500 text-sm mb-8 leading-relaxed">Apakah Anda yakin ingin keluar dari aplikasi?</p>
+                                            <p class="text-slate-500 text-sm mb-8 leading-relaxed">Apakah Anda yakin
+                                                ingin keluar dari aplikasi?</p>
 
                                             <div class="grid grid-cols-2 gap-4">
-                                                <button @click="showLogoutConfirm = false" type="button" class="px-6 py-3 rounded-2xl text-sm font-bold text-slate-500 bg-slate-100 hover:bg-slate-200 transition-colors">
+                                                <button @click="showLogoutConfirm = false" type="button"
+                                                    class="px-6 py-3 rounded-2xl text-sm font-bold text-slate-500 bg-slate-100 hover:bg-slate-200 transition-colors">
                                                     Batal
                                                 </button>
-                                                <button type="button" @click="$refs.logoutForm.submit()" class="px-6 py-3 rounded-2xl text-sm font-bold text-white bg-red-500 hover:bg-red-600 transition-all shadow-lg shadow-red-100">
+                                                <button type="button" @click="$refs.logoutForm.submit()"
+                                                    class="px-6 py-3 rounded-2xl text-sm font-bold text-white bg-red-500 hover:bg-red-600 transition-all shadow-lg shadow-red-100">
                                                     Ya, Keluar
                                                 </button>
                                             </div>
