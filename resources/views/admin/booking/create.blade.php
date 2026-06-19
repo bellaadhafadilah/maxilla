@@ -262,6 +262,7 @@
                         x-model="tanggal"
                         @change="fetchDokters()"
                         min="{{ now()->format('Y-m-d') }}"
+                        max="{{ now()->addDays(14)->format('Y-m-d') }}"
                         required
                         class="w-full border border-slate-200 rounded-xl px-4 py-3 focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 outline-none transition-all cursor-pointer">
                 </div>

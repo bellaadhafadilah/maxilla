@@ -401,7 +401,7 @@
                                     <label class="block text-sm font-bold text-slate-700 mb-2 text-[13px]">Tanggal
                                         Reservasi</label>
                                     <input type="date" name="tanggal" x-model="tanggal" @change="fetchDokters()"
-                                        min="{{ date('Y-m-d') }}"
+                                        min="{{ date('Y-m-d') }}" max="{{ date('Y-m-d', strtotime('+14 days')) }}"
                                         class="block w-full px-4 py-3.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-primary focus:border-primary text-sm transition-colors outline-none cursor-pointer">
                                 </div>
 
