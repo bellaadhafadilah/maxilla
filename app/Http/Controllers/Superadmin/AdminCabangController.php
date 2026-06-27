@@ -9,9 +9,19 @@ use Illuminate\Support\Facades\Hash;
 
 class AdminCabangController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        $admins = User::where('role', 'admin')->get();
+        $query = User::where('role', 'admin');
+
+        if ($request->filled('search')) {
+            $query->where('nama', 'like', '%' . $request->search . '%');
+        }
+
+        if ($request->filled('cabang') && $request->cabang !== 'Semua Cabang') {
+            $query->where('cabang', $request->cabang);
+        }
+
+        $admins = $query->get();
         
         $stats = [
             'total_active' => User::where('role', 'admin')->where('is_active', true)->count(),

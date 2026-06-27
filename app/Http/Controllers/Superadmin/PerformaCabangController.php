@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\Reservasi;
 use App\Models\JadwalDokter;
+use App\Models\User;
 use Carbon\Carbon;
 
 class PerformaCabangController extends Controller
@@ -54,6 +55,14 @@ class PerformaCabangController extends Controller
         ];
 
         $cabangMeta = $meta[$cabang];
+
+        // Fetch admin email
+        $admin = User::where('role', 'admin')
+                     ->where('cabang', $cabang)
+                     ->where('is_active', true)
+                     ->orderBy('id_user')
+                     ->first();
+        $adminEmail = $admin ? $admin->email : 'Belum ada admin';
 
         // 1. Fetch Today Stats
         $reservationsToday = Reservasi::where('cabang', $cabang)
@@ -151,6 +160,6 @@ class PerformaCabangController extends Controller
             ];
         }
 
-        return view('superadmin.performa_cabang.show', compact('cabang', 'cabangMeta', 'statsToday', 'schedulesToday', 'monthStats', 'doctorList'));
+        return view('superadmin.performa_cabang.show', compact('cabang', 'cabangMeta', 'statsToday', 'schedulesToday', 'monthStats', 'doctorList', 'adminEmail'));
     }
 }

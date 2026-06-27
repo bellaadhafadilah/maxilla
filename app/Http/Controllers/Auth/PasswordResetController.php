@@ -55,8 +55,17 @@ class PasswordResetController extends Controller
             }
         );
 
-        return $status === Password::PASSWORD_RESET
-                    ? redirect()->route('login')->with('success', 'Password berhasil direset. Silakan login dengan password baru.')
-                    : back()->withErrors(['email' => [__($status)]]);
+        if ($status === Password::PASSWORD_RESET) {
+            return view('auth.verify-status', [
+                'title' => 'Reset Password Berhasil',
+                'status' => 'success',
+                'heading_success' => 'Reset Password Berhasil!',
+                'message' => 'Password Anda telah berhasil diubah. Silakan login menggunakan password baru Anda.',
+                'redirect_url' => '/login',
+                'button_text' => 'Lanjutkan ke Login'
+            ]);
+        }
+
+        return back()->withErrors(['email' => [__($status)]]);
     }
 }

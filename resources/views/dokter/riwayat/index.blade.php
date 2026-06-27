@@ -3,29 +3,41 @@
 @section('title', 'Riwayat Pemeriksaan')
 
 @section('content')
-<div class="mb-8 flex flex-col md:flex-row md:items-end justify-between gap-5 relative z-10">
+<form method="GET" action="{{ route('dokter.riwayat') }}" class="mb-8 flex flex-col md:flex-row md:items-end justify-between gap-5 relative z-10">
     <div>
         <h1 class="font-heading text-3xl font-bold text-slate-800 tracking-tight">Riwayat Pemeriksaan</h1>
         <p class="text-slate-500 mt-1 text-sm">Lihat histori seluruh pasien yang pernah Anda tangani.</p>
     </div>
-    <div class="flex gap-3 items-center relative">
+    <div class="flex gap-3 items-center relative flex-wrap">
+        <div class="relative w-full sm:w-48">
+            <label for="tanggal_awal" class="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1">Dari Tanggal</label>
+            <input type="date" name="tanggal_awal" id="tanggal_awal" value="{{ request('tanggal_awal') }}" class="w-full pl-3 pr-3 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 active:scale-[0.98] transition-all bg-white shadow-sm">
+        </div>
+        <div class="relative w-full sm:w-48">
+            <label for="tanggal_akhir" class="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1">Sampai Tanggal</label>
+            <input type="date" name="tanggal_akhir" id="tanggal_akhir" value="{{ request('tanggal_akhir') }}" class="w-full pl-3 pr-3 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 active:scale-[0.98] transition-all bg-white shadow-sm">
+        </div>
         <div class="relative w-full sm:w-64">
-            <label for="search" class="sr-only">Cari Pasien</label>
-            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+            <label for="nama" class="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1">Cari Pasien</label>
+            <div class="absolute inset-y-0 left-0 pl-3 pt-6 flex items-center pointer-events-none">
                 <svg class="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
             </div>
-            <input type="text" id="search" placeholder="Cari nama pasien, diagnosa, tindakan..." class="pl-10 pr-4 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 active:scale-[0.98] transition-all bg-white shadow-sm w-full">
+            <input type="text" name="nama" id="nama" value="{{ request('nama') }}" placeholder="Ketik nama pasien..." class="pl-10 pr-4 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 active:scale-[0.98] transition-all bg-white shadow-sm w-full">
         </div>
 
-        <div class="flex items-center gap-2">
-            <select id="filterRange" class="py-2 px-3 border border-slate-200 rounded-xl text-sm bg-white shadow-sm">
-                <option value="all">Semua waktu</option>
-                <option value="30">30 hari terakhir</option>
-                <option value="365">1 tahun terakhir</option>
-            </select>
+        <div class="flex items-center gap-2 mt-5">
+            <button type="submit" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded-xl text-sm shadow-sm transition-colors flex items-center gap-2">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"></path></svg>
+                Terapkan
+            </button>
+            @if(request('tanggal_awal') || request('tanggal_akhir') || request('nama'))
+                <a href="{{ route('dokter.riwayat') }}" class="bg-slate-100 hover:bg-slate-200 text-slate-600 font-bold py-2 px-4 rounded-xl text-sm transition-colors">
+                    Reset
+                </a>
+            @endif
         </div>
     </div>
-</div>
+</form>
 
 <div class="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden mb-8">
     <div class="p-6 border-b border-slate-100 bg-white">
@@ -90,46 +102,4 @@
 </div>
 @endsection
 
-@push('scripts')
-<script>
-    (function(){
-        const searchInput = document.getElementById('search');
-        const filterRange = document.getElementById('filterRange');
-        const tbody = document.getElementById('riwayatTableBody');
-        if (!tbody) return;
 
-        function normalize(str){
-            return (str||'').toString().toLowerCase().trim();
-        }
-
-        function filterRows(){
-            const q = normalize(searchInput.value);
-            const range = filterRange.value;
-            const rows = Array.from(tbody.querySelectorAll('tr'));
-            const today = new Date();
-
-            rows.forEach(r=>{
-                const text = normalize(r.dataset.search);
-                const dateStr = r.dataset.date; // expected YYYY-MM-DD
-                let dateOk = true;
-                if (range !== 'all' && dateStr){
-                    const rowDate = new Date(dateStr);
-                    const diffDays = Math.floor((today - rowDate)/(1000*60*60*24));
-                    dateOk = diffDays <= parseInt(range,10);
-                }
-
-                const textOk = q === '' ? true : text.indexOf(q) !== -1;
-
-                r.style.display = (textOk && dateOk) ? '' : 'none';
-            });
-        }
-
-        let debounce;
-        searchInput.addEventListener('input', ()=>{
-            clearTimeout(debounce);
-            debounce = setTimeout(filterRows, 180);
-        });
-        filterRange.addEventListener('change', filterRows);
-    })();
-</script>
-@endpush

@@ -405,6 +405,33 @@ public function checkinPasien($id)
                             ->orderBy('jam', 'desc')
                             ->get();
 
-        return view('admin.booking.riwayat', compact('reservasis', 'tanggal_awal', 'tanggal_akhir', 'nama'));
+        $stats = [
+            'total' => $reservasis->count(),
+            'selesai' => $reservasis->where('status', 'Selesai')->count(),
+            'dibatalkan' => $reservasis->where('status', 'Dibatalkan')->count(),
+            'kadaluarsa' => $reservasis->where('status', 'Kadaluarsa')->count(),
+        ];
+
+        // Prepare data for Trend Chart (Kunjungan per Hari)
+        $trendKunjungan = $reservasis->sortBy('tanggal')->groupBy('tanggal')->map(function($group) {
+            return $group->count();
+        });
+        
+        $chartDates = $trendKunjungan->keys()->map(function($date) {
+            return \Carbon\Carbon::parse($date)->format('d M');
+        })->toArray();
+        $chartCounts = $trendKunjungan->values()->toArray();
+
+        // Prepare data for Top Keluhan (Keluhan Tersering)
+        $topKeluhan = $reservasis->whereNotNull('keluhan')->filter(function($res) {
+            return trim($res->keluhan) !== '' && trim($res->keluhan) !== '-';
+        })->groupBy(function ($item) {
+            return ucfirst(trim(strtolower($item->keluhan)));
+        })->map->count()->sortDesc()->take(5);
+
+        $chartKeluhanLabels = $topKeluhan->keys()->toArray();
+        $chartKeluhanCounts = $topKeluhan->values()->toArray();
+
+        return view('admin.booking.riwayat', compact('reservasis', 'stats', 'tanggal_awal', 'tanggal_akhir', 'nama', 'chartDates', 'chartCounts', 'chartKeluhanLabels', 'chartKeluhanCounts'));
     }
 }

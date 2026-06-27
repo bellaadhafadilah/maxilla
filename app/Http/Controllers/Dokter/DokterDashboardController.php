@@ -79,19 +79,32 @@ class DokterDashboardController extends Controller
         return view('dokter.antrian.index', compact('antrians'));
     }
 
-    public function riwayat()
+    public function riwayat(Request $request)
     {
         $namaDokter = \Illuminate\Support\Facades\Auth::user()->nama;
         $namaTanpaGelar = trim(preg_replace('/^(drg\.|dr\.)\s*/i', '', $namaDokter));
 
-        $riwayats = \App\Models\Reservasi::with('rekamMedis', 'user.pasien')
+        $tanggal_awal = $request->query('tanggal_awal');
+        $tanggal_akhir = $request->query('tanggal_akhir');
+        $nama = $request->query('nama');
+
+        $query = \App\Models\Reservasi::with('rekamMedis', 'user.pasien')
             ->where('dokter_nama', 'like', "%{$namaTanpaGelar}%")
-            ->whereIn('status', ['Selesai', 'Menunggu Pembayaran'])
-            ->orderBy('tanggal', 'desc')
+            ->whereIn('status', ['Selesai', 'Menunggu Pembayaran', 'Menunggu Obat']);
+
+        if ($tanggal_awal && $tanggal_akhir) {
+            $query->whereBetween('tanggal', [$tanggal_awal, $tanggal_akhir]);
+        }
+
+        if ($nama) {
+            $query->where('nama_pasien', 'like', '%' . $nama . '%');
+        }
+
+        $riwayats = $query->orderBy('tanggal', 'desc')
             ->orderBy('jam', 'desc')
             ->get();
 
-        return view('dokter.riwayat.index', compact('riwayats'));
+        return view('dokter.riwayat.index', compact('riwayats', 'tanggal_awal', 'tanggal_akhir', 'nama'));
     }
 
     public function profil()

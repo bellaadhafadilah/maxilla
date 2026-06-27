@@ -114,11 +114,21 @@ class AuthController extends Controller
         $user = \App\Models\User::find($id);
 
         if (!$user) {
-            return redirect('/login')->withErrors(['email' => 'Pengguna tidak ditemukan atau akun sudah dihapus.']);
+            return view('auth.verify-status', [
+                'status' => 'error',
+                'message' => 'Pengguna tidak ditemukan atau akun sudah dihapus.',
+                'redirect_url' => '/register',
+                'button_text' => 'Kembali ke Pendaftaran'
+            ]);
         }
 
         if (! hash_equals((string) $hash, sha1($user->getEmailForVerification()))) {
-            return redirect('/login')->withErrors(['email' => 'Link verifikasi tidak valid atau sudah kadaluarsa.']);
+            return view('auth.verify-status', [
+                'status' => 'error',
+                'message' => 'Link verifikasi tidak valid atau sudah kadaluarsa.',
+                'redirect_url' => '/register',
+                'button_text' => 'Kembali ke Pendaftaran'
+            ]);
         }
 
         if (!$user->hasVerifiedEmail()) {
@@ -126,7 +136,12 @@ class AuthController extends Controller
             event(new \Illuminate\Auth\Events\Verified($user));
         }
 
-        return redirect('/login')->with('success', 'Email berhasil diverifikasi! Silakan login.');
+        return view('auth.verify-status', [
+            'status' => 'success',
+            'message' => 'Email berhasil diverifikasi! Silakan login untuk melanjutkan.',
+            'redirect_url' => '/login',
+            'button_text' => 'Lanjutkan ke Login'
+        ]);
     }
 
     /**

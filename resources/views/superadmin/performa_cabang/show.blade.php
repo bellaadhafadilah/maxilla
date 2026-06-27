@@ -34,16 +34,6 @@
                 </svg>
                 Hari Ini (Live)
             </button>
-            <!-- Print Laporan -->
-            <!-- <button
-                class="px-4 py-2 bg-{{ $cabangMeta['warna'] }}-600 text-white rounded-xl text-sm font-bold hover:bg-{{ $cabangMeta['warna'] }}-700 transition-all shadow-sm flex items-center gap-2 active:scale-95">
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                        d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z">
-                    </path>
-                </svg>
-                Print PDF
-            </button> -->
         </div>
     </div>
 
@@ -94,19 +84,12 @@
                             class="text-[12px] text-emerald-500 font-medium">WIB</span></p>
                 </div>
                 <div>
-                    <p class="text-[11px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Kapasitas Maks</p>
-                    <p class="text-[15px] font-bold text-slate-700">{{ $cabangMeta['kapasitas'] }} <span
-                            class="text-xs font-normal text-slate-500">Pasien/hari</span></p>
+                    <p class="text-[11px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Email Cabang</p>
+                    <p class="text-[15px] font-bold text-slate-700">{{ $adminEmail }}</p>
                 </div>
                 <div>
-                    <p class="text-[11px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Review Pasien</p>
-                    <p class="text-[15px] font-bold text-amber-500 flex items-center gap-1">
-                        {{ $cabangMeta['rating'] }} <svg class="w-4 h-4 fill-current" viewBox="0 0 20 20">
-                            <path
-                                d="M10 15l-5.878 3.09 1.123-6.545L.489 6.91l6.572-.955L10 0l2.939 5.955 6.572.955-4.756 4.635 1.123 6.545z" />
-                        </svg>
-                        <span class="text-xs font-normal text-slate-400">({{ $cabangMeta['reviews'] }})</span>
-                    </p>
+                    <p class="text-[11px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Total Dokter</p>
+                    <p class="text-[15px] font-bold text-slate-700">{{ count($doctorList) }} <span class="text-xs font-normal text-slate-500">Orang</span></p>
                 </div>
             </div>
         </div>

@@ -66,7 +66,7 @@
     <!-- ========================================== -->
     <div class="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden mb-8">
         <!-- Toolbar -->
-        <div class="p-5 border-b border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white">
+        <form action="{{ url('/superadmin/pengguna/admin') }}" method="GET" class="p-5 border-b border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white">
             <div class="relative max-w-sm w-full">
                 <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
                     <svg class="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -74,20 +74,21 @@
                             d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
                     </svg>
                 </div>
-                <input type="text"
+                <input type="text" name="search" value="{{ request('search') }}"
                     class="bg-slate-50 border border-slate-200 text-slate-800 text-sm rounded-xl focus:ring-indigo-500 focus:border-indigo-500 block w-full pl-10 p-2.5 outline-none transition-all"
                     placeholder="Cari nama admin...">
+                <button type="submit" class="hidden"></button>
             </div>
             <div class="flex items-center gap-2">
-                <select
+                <select name="cabang" onchange="this.form.submit()"
                     class="bg-white border border-slate-200 text-slate-600 text-sm rounded-xl focus:ring-indigo-500 focus:border-indigo-500 block p-2.5 outline-none font-medium cursor-pointer hover:bg-slate-50 transition-colors">
-                    <option>Semua Cabang</option>
-                    <option>Maxilla Slawi</option>
-                    <option>Maxilla Tegal</option>
-                    <option>Maxilla Brebes</option>
+                    <option value="">Semua Cabang</option>
+                    <option value="slawi" {{ request('cabang') == 'slawi' ? 'selected' : '' }}>Maxilla Slawi</option>
+                    <option value="tegal" {{ request('cabang') == 'tegal' ? 'selected' : '' }}>Maxilla Tegal</option>
+                    <option value="brebes" {{ request('cabang') == 'brebes' ? 'selected' : '' }}>Maxilla Brebes</option>
                 </select>
             </div>
-        </div>
+        </form>
 
         @if(session('success'))
             <div
